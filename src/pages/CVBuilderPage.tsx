@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { supabase } from '../lib/supabase';
 import type { CVVersion, CVData } from '../lib/supabase';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import './CVBuilderPage.css';
 
 const emptyCV: CVData = {
@@ -143,8 +145,124 @@ export const CVBuilderPage: React.FC = () => {
     };
 
     const downloadPDF = () => {
-        // This would integrate with a PDF generation library
-        alert('PDF download feature will be implemented with jsPDF library');
+        const doc = new jsPDF();
+        const margin = 20;
+        let yPos = 20;
+
+        // Helper to check page break
+        const checkPageBreak = (height: number) => {
+            if (yPos + height > 280) {
+                doc.addPage();
+                yPos = 20;
+            }
+        };
+
+        // Header
+        doc.setFontSize(24);
+        doc.setTextColor(44, 62, 80); // Dark blue
+        doc.text(currentCV.profile.full_name || 'Your Name', margin, yPos);
+        yPos += 10;
+
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100); // Grey
+        const contactInfo = [
+            currentCV.profile.email,
+            currentCV.profile.phone,
+            currentCV.profile.location
+        ].filter(Boolean).join(' | ');
+
+        doc.text(contactInfo, margin, yPos);
+        yPos += 15;
+
+        // Line separator
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, yPos, 190, yPos);
+        yPos += 10;
+
+        // Summary
+        if (currentCV.profile.summary) {
+            checkPageBreak(30);
+            doc.setFontSize(14);
+            doc.setTextColor(44, 62, 80);
+            doc.text('Professional Summary', margin, yPos);
+            yPos += 7;
+
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            const splitSummary = doc.splitTextToSize(currentCV.profile.summary, 170);
+            doc.text(splitSummary, margin, yPos);
+            yPos += splitSummary.length * 5 + 10;
+        }
+
+        // Experience
+        if (currentCV.experience.length > 0) {
+            checkPageBreak(20);
+            doc.setFontSize(14);
+            doc.setTextColor(44, 62, 80);
+            doc.text('Work Experience', margin, yPos);
+            yPos += 5;
+
+            autoTable(doc, {
+                startY: yPos,
+                head: [],
+                body: currentCV.experience.map(exp => [
+                    { content: `${exp.title}\n${exp.company}`, styles: { fontStyle: 'bold' } },
+                    { content: `${exp.start_date} - ${exp.current ? 'Present' : exp.end_date}`, styles: { halign: 'right' } },
+                    { content: exp.description, colSpan: 2 }
+                ]),
+                theme: 'plain',
+                styles: { cellPadding: 2, fontSize: 10 }
+            });
+
+            // Update yPos based on table
+            // @ts-ignore
+            yPos = doc.lastAutoTable.finalY + 10;
+        }
+
+        // Education
+        if (currentCV.education.length > 0) {
+            checkPageBreak(20);
+            doc.setFontSize(14);
+            doc.setTextColor(44, 62, 80);
+            doc.text('Education', margin, yPos);
+            yPos += 5;
+
+            autoTable(doc, {
+                startY: yPos,
+                head: [],
+                body: currentCV.education.map(edu => [
+                    { content: `${edu.degree}\n${edu.institution}`, styles: { fontStyle: 'bold' } },
+                    { content: `${edu.start_date} - ${edu.current ? 'Present' : edu.end_date}`, styles: { halign: 'right' } }
+                ]),
+                theme: 'plain',
+                styles: { cellPadding: 2, fontSize: 10 },
+                columnStyles: {
+                    0: { cellWidth: 120 },
+                    1: { cellWidth: 50, halign: 'right' }
+                }
+            });
+
+            // @ts-ignore
+            yPos = doc.lastAutoTable.finalY + 10;
+        }
+
+        // Skills
+        if (currentCV.skills.length > 0) {
+            checkPageBreak(20);
+            doc.setFontSize(14);
+            doc.setTextColor(44, 62, 80);
+            doc.text('Skills', margin, yPos);
+            yPos += 7;
+
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            const skillsText = currentCV.skills.join(' • ');
+            const splitSkills = doc.splitTextToSize(skillsText, 170);
+            doc.text(splitSkills, margin, yPos);
+            yPos += splitSkills.length * 5 + 10;
+        }
+
+        doc.save(`${cvTitle || 'My_CV'}.pdf`);
     };
 
     const updateProfile = (field: string, value: string) => {
