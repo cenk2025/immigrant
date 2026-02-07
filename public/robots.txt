@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /cv-builder
+
+Sitemap: https://worklife.voon.fi/sitemap.xml
