@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, FileText, MessageCircle, LayoutDashboard, ArrowRight, CheckCircle } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -6,6 +6,13 @@ import './HomePage.css';
 
 export const HomePage: React.FC = () => {
     const { t } = useLanguage();
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.playbackRate = 0.5; // Slow motion
+        }
+    }, []);
 
     const features = [
         {
@@ -51,7 +58,19 @@ export const HomePage: React.FC = () => {
         <div className="home-page">
             {/* Hero Section */}
             <section className="hero">
-                <div className="hero-background"></div>
+                <div className="hero-background">
+                    <video
+                        ref={videoRef}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="hero-video"
+                    >
+                        <source src="/Immigrant_Finland.mp4" type="video/mp4" />
+                    </video>
+                    <div className="hero-overlay"></div>
+                </div>
                 <div className="container">
                     <div className="hero-content">
                         <div className="hero-badge">{t('hero.byVoonIQ')}</div>
@@ -106,7 +125,7 @@ export const HomePage: React.FC = () => {
                         <div className="benefits-text">
                             <h2>Your Trusted Companion for Professional Life in Finland</h2>
                             <p>
-                                WorkLife IQ Finland is designed to support immigrants at every stage of their
+                                Talent Factory is designed to support immigrants at every stage of their
                                 career journey in Finland. Whether you're planning to move, just arrived, or
                                 looking to advance your career, we provide the tools and knowledge you need.
                             </p>
@@ -163,7 +182,7 @@ export const HomePage: React.FC = () => {
                         <h2>Ready to Navigate Your Career in Finland?</h2>
                         <p>
                             Join thousands of immigrants who have successfully integrated into Finnish
-                            working life with WorkLife IQ Finland.
+                            working life with Talent Factory.
                         </p>
                         <div className="cta-actions">
                             <Link to="/signup" className="btn btn-accent btn-lg">

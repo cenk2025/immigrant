@@ -658,3 +658,13 @@
         flex-direction: column;
     }
 }
+
+.skills-input-container {
+    display: flex;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.skills-input-container .input {
+    flex: 1;
+}

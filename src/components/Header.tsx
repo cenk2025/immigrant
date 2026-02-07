@@ -20,12 +20,11 @@ export const Header: React.FC = () => {
         <header className="header">
             <div className="container">
                 <div className="header-content">
-                    {/* Logo */}
                     <Link to="/" className="logo">
-                        <div className="logo-icon">WL</div>
+                        <div className="logo-icon">V</div>
                         <div className="logo-text">
-                            <span className="logo-title">WorkLife IQ Finland</span>
-                            <span className="logo-subtitle">{t('hero.byVoonIQ')}</span>
+                            <span className="logo-title">Talent Factory</span>
+                            <span className="logo-subtitle">Finland</span>
                         </div>
                     </Link>
 

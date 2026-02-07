@@ -76,44 +76,51 @@ export const CVBuilderPage: React.FC = () => {
 
         setSaving(true);
 
-        if (currentCVId) {
-            // Update existing CV
-            const { error } = await supabase
-                .from('cv_versions')
-                .update({
-                    title: cvTitle,
-                    data: currentCV,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('id', currentCVId);
+        try {
+            let error;
+            if (currentCVId) {
+                // Update existing CV
+                const result = await supabase
+                    .from('cv_versions')
+                    .update({
+                        title: cvTitle,
+                        data: currentCV,
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq('id', currentCVId);
+                error = result.error;
+            } else {
+                // Create new CV
+                const result = await supabase
+                    .from('cv_versions')
+                    .insert({
+                        user_id: user.id,
+                        title: cvTitle,
+                        template: 'modern',
+                        data: currentCV,
+                    })
+                    .select()
+                    .single();
 
-            if (!error) {
-                await loadCVList();
-                // Trigger AI analysis after successful save
-                await analyzeCV();
+                if (result.data) {
+                    setCurrentCVId(result.data.id);
+                }
+                error = result.error;
             }
-        } else {
-            // Create new CV
-            const { data, error } = await supabase
-                .from('cv_versions')
-                .insert({
-                    user_id: user.id,
-                    title: cvTitle,
-                    template: 'modern',
-                    data: currentCV,
-                })
-                .select()
-                .single();
 
-            if (!error && data) {
-                setCurrentCVId(data.id);
-                await loadCVList();
-                // Trigger AI analysis after successful save
-                await analyzeCV();
-            }
+            if (error) throw error;
+
+            await loadCVList();
+            alert('CV saved successfully!');
+
+            // Trigger AI analysis after successful save
+            analyzeCV().catch(console.error); // Run in background
+        } catch (error: any) {
+            console.error('Error saving CV:', error);
+            alert(`Failed to save CV: ${error.message || 'Unknown error'}`);
+        } finally {
+            setSaving(false);
         }
-
-        setSaving(false);
     };
 
     const createNewCV = () => {
@@ -217,13 +224,15 @@ export const CVBuilderPage: React.FC = () => {
         });
     };
 
+    const [newSkill, setNewSkill] = useState('');
+
     const addSkill = () => {
-        const skill = prompt('Enter skill name:');
-        if (skill) {
+        if (newSkill.trim()) {
             setCurrentCV({
                 ...currentCV,
-                skills: [...currentCV.skills, skill],
+                skills: [...currentCV.skills, newSkill.trim()],
             });
+            setNewSkill('');
         }
     };
 
@@ -813,9 +822,19 @@ Keep your response concise, professional, and actionable. Focus on practical adv
                             <div className="cv-form">
                                 <div className="cv-form-header">
                                     <h3>Skills</h3>
-                                    <button onClick={addSkill} className="btn btn-primary btn-sm">
+                                </div>
+                                <div className="skills-input-container">
+                                    <input
+                                        type="text"
+                                        value={newSkill}
+                                        onChange={(e) => setNewSkill(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && addSkill()}
+                                        className="input"
+                                        placeholder="Enter a skill (e.g. JavaScript, Project Management)"
+                                    />
+                                    <button onClick={addSkill} className="btn btn-primary" disabled={!newSkill.trim()}>
                                         <Plus size={16} />
-                                        Add Skill
+                                        Add
                                     </button>
                                 </div>
                                 <div className="skills-grid">

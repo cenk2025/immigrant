@@ -15,9 +15,9 @@ export const Footer: React.FC = () => {
                     {/* About Section */}
                     <div className="footer-section">
                         <div className="footer-logo">
-                            <div className="footer-logo-icon">WL</div>
+                            <div className="footer-logo-icon">V</div>
                             <div>
-                                <h3 className="footer-brand">WorkLife IQ Finland</h3>
+                                <h3 className="footer-brand">Talent Factory</h3>
                                 <p className="footer-tagline">{t('hero.byVoonIQ')}</p>
                             </div>
                         </div>

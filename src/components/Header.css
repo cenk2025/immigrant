@@ -30,17 +30,13 @@
 }
 
 .logo-icon {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-    border-radius: var(--radius-lg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 1.25rem;
-    color: white;
-    box-shadow: var(--shadow-md);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 2.5rem;
+    color: var(--color-primary);
+    line-height: 1;
+    margin-right: -4px;
+    /* Adjust spacing since box is gone */
 }
 
 .logo-text {

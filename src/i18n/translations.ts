@@ -102,7 +102,7 @@ export const translations = {
 
     // Footer
     footer: {
-      about: 'About WorkLife IQ Finland',
+      about: 'About Talent Factory',
       description: 'A trusted career intelligence and integration support platform for immigrants in Finland.',
       product: 'Product',
       legal: 'Legal',
@@ -252,8 +252,8 @@ export const translations = {
 
     // Footer
     footer: {
-      about: 'Tietoa WorkLife IQ Finlandista',
-      description: 'Luotettava uraintelligenssi- ja integraatiotukialusta maahanmuuttajille Suomessa.',
+      about: 'About Talent Factory',
+      description: 'A trusted career intelligence and integration support platform for immigrants in Finland.',
       product: 'Tuote',
       legal: 'Lakiasiat',
       support: 'Tuki',
