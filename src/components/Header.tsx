@@ -33,6 +33,7 @@ export const Header: React.FC = () => {
                         <Link to="/guide" className="nav-link">{t('nav.guide')}</Link>
                         <Link to="/employer-guide" className="nav-link">{t('nav.employerGuide')}</Link>
                         <Link to="/cv-builder" className="nav-link">{t('nav.cvBuilder')}</Link>
+                        <Link to="/community" className="nav-link">Community</Link>
                         <Link to="/assistant" className="nav-link">{t('nav.assistant')}</Link>
                         {user && <Link to="/dashboard" className="nav-link">{t('nav.dashboard')}</Link>}
                     </nav>
@@ -111,6 +112,13 @@ export const Header: React.FC = () => {
                             onClick={() => setMobileMenuOpen(false)}
                         >
                             {t('nav.cvBuilder')}
+                        </Link>
+                        <Link
+                            to="/community"
+                            className="nav-link-mobile"
+                            onClick={() => setMobileMenuOpen(false)}
+                        >
+                            Community
                         </Link>
                         <Link
                             to="/assistant"

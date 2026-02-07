@@ -6,7 +6,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { supabase } from '../lib/supabase';
 import type { CVVersion, CVData } from '../lib/supabase';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// import autoTable from 'jspdf-autotable'; // Removed as we use manual layout now
 import './CVBuilderPage.css';
 
 const emptyCV: CVData = {
@@ -144,27 +144,53 @@ export const CVBuilderPage: React.FC = () => {
         await loadCVList();
     };
 
-    const downloadPDF = () => {
+    const downloadPDF = async () => {
         const doc = new jsPDF();
         const margin = 20;
         let yPos = 20;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const contentWidth = pageWidth - (margin * 2);
 
         // Helper to check page break
         const checkPageBreak = (height: number) => {
             if (yPos + height > 280) {
                 doc.addPage();
                 yPos = 20;
+                return true;
             }
+            return false;
         };
 
-        // Header
+        // Header Section
+        // Photo
+        if (currentCV.profile.photo_url) {
+            try {
+                // Fetch image (assuming cached or accessible URL)
+                const img = new Image();
+                img.src = currentCV.profile.photo_url;
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                });
+
+                // Add circular or square image
+                const imgSize = 30;
+                doc.addImage(img, 'JPEG', pageWidth - margin - imgSize, yPos, imgSize, imgSize);
+            } catch (e) {
+                console.warn('Could not load profile image for PDF', e);
+            }
+        }
+
+        // Name and Contact
         doc.setFontSize(24);
-        doc.setTextColor(44, 62, 80); // Dark blue
-        doc.text(currentCV.profile.full_name || 'Your Name', margin, yPos);
-        yPos += 10;
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(44, 62, 80);
+        doc.text(currentCV.profile.full_name || 'Your Name', margin, yPos + 10);
+        yPos += 20;
 
         doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100); // Grey
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
         const contactInfo = [
             currentCV.profile.email,
             currentCV.profile.phone,
@@ -174,92 +200,160 @@ export const CVBuilderPage: React.FC = () => {
         doc.text(contactInfo, margin, yPos);
         yPos += 15;
 
-        // Line separator
+        // Separator
         doc.setDrawColor(200, 200, 200);
-        doc.line(margin, yPos, 190, yPos);
-        yPos += 10;
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 15;
 
-        // Summary
+        // Professional Summary
         if (currentCV.profile.summary) {
             checkPageBreak(30);
             doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
             doc.setTextColor(44, 62, 80);
             doc.text('Professional Summary', margin, yPos);
-            yPos += 7;
+            yPos += 8;
 
             doc.setFontSize(10);
-            doc.setTextColor(0, 0, 0);
-            const splitSummary = doc.splitTextToSize(currentCV.profile.summary, 170);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(50, 50, 50);
+
+            const splitSummary = doc.splitTextToSize(currentCV.profile.summary, contentWidth);
             doc.text(splitSummary, margin, yPos);
-            yPos += splitSummary.length * 5 + 10;
+            yPos += (splitSummary.length * 5) + 10;
         }
 
-        // Experience
+        // Work Experience (Manual Layout for reliability)
         if (currentCV.experience.length > 0) {
-            checkPageBreak(20);
+            checkPageBreak(25);
             doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
             doc.setTextColor(44, 62, 80);
             doc.text('Work Experience', margin, yPos);
-            yPos += 5;
+            yPos += 10;
 
-            autoTable(doc, {
-                startY: yPos,
-                head: [],
-                body: currentCV.experience.map(exp => [
-                    { content: `${exp.title}\n${exp.company}`, styles: { fontStyle: 'bold' } },
-                    { content: `${exp.start_date} - ${exp.current ? 'Present' : exp.end_date}`, styles: { halign: 'right' } },
-                    { content: exp.description, colSpan: 2 }
-                ]),
-                theme: 'plain',
-                styles: { cellPadding: 2, fontSize: 10 }
-            });
+            currentCV.experience.forEach(exp => {
+                checkPageBreak(25);
 
-            // Update yPos based on table
-            // @ts-expect-error - jspdf-autotable adds this property
-            yPos = doc.lastAutoTable.finalY + 10;
-        }
+                // Title and Company
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 0, 0);
+                const titleText = `${exp.title} at ${exp.company}`;
+                doc.text(titleText, margin, yPos);
 
-        // Education
-        if (currentCV.education.length > 0) {
-            checkPageBreak(20);
-            doc.setFontSize(14);
-            doc.setTextColor(44, 62, 80);
-            doc.text('Education', margin, yPos);
-            yPos += 5;
+                // Date
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 100, 100);
+                const dateText = `${exp.start_date} - ${exp.current ? 'Present' : exp.end_date}`;
+                const dateWidth = doc.getTextWidth(dateText);
+                doc.text(dateText, pageWidth - margin - dateWidth, yPos);
 
-            autoTable(doc, {
-                startY: yPos,
-                head: [],
-                body: currentCV.education.map(edu => [
-                    { content: `${edu.degree}\n${edu.institution}`, styles: { fontStyle: 'bold' } },
-                    { content: `${edu.start_date} - ${edu.current ? 'Present' : edu.end_date}`, styles: { halign: 'right' } }
-                ]),
-                theme: 'plain',
-                styles: { cellPadding: 2, fontSize: 10 },
-                columnStyles: {
-                    0: { cellWidth: 120 },
-                    1: { cellWidth: 50, halign: 'right' }
+                yPos += 6;
+
+                // Description
+                if (exp.description) {
+                    doc.setFontSize(10);
+                    doc.setTextColor(60, 60, 60);
+                    const splitDesc = doc.splitTextToSize(exp.description, contentWidth);
+
+                    // Check if description fits, if not page break
+                    if (checkPageBreak(splitDesc.length * 5 + 5)) {
+                        // If page break happened, reprint header? No, just print description on new page
+                    }
+
+                    doc.text(splitDesc, margin, yPos);
+                    yPos += (splitDesc.length * 5) + 8;
+                } else {
+                    yPos += 4;
                 }
             });
-
-            // @ts-expect-error - jspdf-autotable adds this property
-            yPos = doc.lastAutoTable.finalY + 10;
+            yPos += 5; // Extra spacing after section
         }
 
-        // Skills
+        // Education (Manual Layout)
+        if (currentCV.education.length > 0) {
+            checkPageBreak(25);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(44, 62, 80);
+            doc.text('Education', margin, yPos);
+            yPos += 10;
+
+            currentCV.education.forEach(edu => {
+                checkPageBreak(20);
+
+                // Degree and Institution
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 0, 0);
+                const eduTitle = `${edu.degree}, ${edu.institution}`;
+                doc.text(eduTitle, margin, yPos);
+
+                // Date
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 100, 100);
+                const dateText = `${edu.start_date} - ${edu.current ? 'Present' : edu.end_date}`;
+                const dateWidth = doc.getTextWidth(dateText);
+                doc.text(dateText, pageWidth - margin - dateWidth, yPos);
+
+                yPos += 6;
+
+                if (edu.description) {
+                    doc.setFontSize(10);
+                    doc.setTextColor(60, 60, 60);
+                    const splitDesc = doc.splitTextToSize(edu.description, contentWidth);
+                    if (checkPageBreak(splitDesc.length * 5 + 5)) {
+                        // page break handled
+                    }
+                    doc.text(splitDesc, margin, yPos);
+                    yPos += (splitDesc.length * 5) + 8;
+                } else {
+                    yPos += 4;
+                }
+            });
+            yPos += 5;
+        }
+
+        // Skills (Manual Layout)
         if (currentCV.skills.length > 0) {
             checkPageBreak(20);
             doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
             doc.setTextColor(44, 62, 80);
             doc.text('Skills', margin, yPos);
-            yPos += 7;
+            yPos += 8;
 
             doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
             doc.setTextColor(0, 0, 0);
-            const skillsText = currentCV.skills.join(' • ');
-            const splitSkills = doc.splitTextToSize(skillsText, 170);
+
+            const skillsText = currentCV.skills.join('  •  ');
+            const splitSkills = doc.splitTextToSize(skillsText, contentWidth);
             doc.text(splitSkills, margin, yPos);
-            yPos += splitSkills.length * 5 + 10;
+            yPos += (splitSkills.length * 5) + 10;
+        }
+
+        // Languages (Manual Layout)
+        if (currentCV.languages && currentCV.languages.length > 0) {
+            checkPageBreak(25);
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(44, 62, 80);
+            doc.text('Languages', margin, yPos);
+            yPos += 8;
+
+            currentCV.languages.forEach(lang => {
+                const langText = `${lang.language} - ${lang.proficiency}`;
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(0, 0, 0);
+                doc.text(langText, margin, yPos);
+                yPos += 5;
+            });
+            yPos += 5;
         }
 
         doc.save(`${cvTitle || 'My_CV'}.pdf`);
@@ -358,6 +452,36 @@ export const CVBuilderPage: React.FC = () => {
         setCurrentCV({
             ...currentCV,
             skills: currentCV.skills.filter((_, i) => i !== index),
+        });
+    };
+
+    const [newLanguage, setNewLanguage] = useState('');
+    const [newLanguageLevel, setNewLanguageLevel] = useState('Intermediate');
+
+    // Add known language typing here by creating a constant or type if needed, 
+    // but for now we'll stick to string as per CVData interface likely assumption.
+    const addLanguage = () => {
+        if (newLanguage.trim()) {
+            setCurrentCV({
+                ...currentCV,
+                languages: [
+                    ...(currentCV.languages || []),
+                    {
+                        id: Date.now().toString(),
+                        language: newLanguage.trim(),
+                        proficiency: newLanguageLevel as 'Native' | 'Fluent' | 'Advanced' | 'Intermediate' | 'Basic'
+                    }
+                ],
+            });
+            setNewLanguage('');
+            setNewLanguageLevel('Intermediate');
+        }
+    };
+
+    const removeLanguage = (index: number) => {
+        setCurrentCV({
+            ...currentCV,
+            languages: (currentCV.languages || []).filter((_, i) => i !== index),
         });
     };
 
@@ -936,6 +1060,8 @@ Keep your response concise, professional, and actionable. Focus on practical adv
                             </div>
                         )}
 
+
+
                         {activeSection === 'skills' && (
                             <div className="cv-form">
                                 <div className="cv-form-header">
@@ -967,6 +1093,52 @@ Keep your response concise, professional, and actionable. Focus on practical adv
                                 </div>
                                 {currentCV.skills.length === 0 && (
                                     <p className="empty-state">No skills added yet.</p>
+                                )}
+
+                                <div className="cv-form-header" style={{ marginTop: '2rem' }}>
+                                    <h3>Languages</h3>
+                                </div>
+                                <div className="skills-input-container">
+                                    <input
+                                        type="text"
+                                        value={newLanguage}
+                                        onChange={(e) => setNewLanguage(e.target.value)}
+                                        className="input"
+                                        placeholder="Enter a language (e.g. Finnish, English)"
+                                        style={{ flex: 2 }}
+                                    />
+                                    <select
+                                        value={newLanguageLevel}
+                                        onChange={(e) => setNewLanguageLevel(e.target.value)}
+                                        className="input"
+                                        style={{ flex: 1 }}
+                                    >
+                                        <option value="Native">Native</option>
+                                        <option value="Fluent">Fluent</option>
+                                        <option value="Advanced">Advanced</option>
+                                        <option value="Intermediate">Intermediate</option>
+                                        <option value="Basic">Basic</option>
+                                    </select>
+                                    <button onClick={addLanguage} className="btn btn-primary" disabled={!newLanguage.trim()}>
+                                        <Plus size={16} />
+                                        Add
+                                    </button>
+                                </div>
+                                <div className="skills-grid">
+                                    {(currentCV.languages || []).map((lang, index) => (
+                                        <div key={index} className="skill-tag language-tag">
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <span style={{ fontWeight: 'bold' }}>{lang.language}</span>
+                                                <span style={{ fontSize: '0.8em', opacity: 0.8 }}>{lang.proficiency}</span>
+                                            </div>
+                                            <button onClick={() => removeLanguage(index)} className="skill-remove">
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                {(!currentCV.languages || currentCV.languages.length === 0) && (
+                                    <p className="empty-state">No languages added yet.</p>
                                 )}
                             </div>
                         )}

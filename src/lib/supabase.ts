@@ -97,3 +97,17 @@ export interface SavedGuideSection {
     section_id: string;
     created_at: string;
 }
+
+export interface CommunityPost {
+    id: string;
+    user_id: string;
+    title: string;
+    content: string;
+    category: 'Work Culture' | 'Visa Process' | 'Daily Life' | 'Education' | 'Other';
+    likes: number;
+    created_at: string;
+    user_metadata?: {
+        full_name: string;
+    };
+    author_name: string;
+}

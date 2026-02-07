@@ -12,6 +12,7 @@ import { EmployerGuidePage } from './pages/EmployerGuidePage';
 import { CVBuilderPage } from './pages/CVBuilderPage';
 import { AssistantPage } from './pages/AssistantPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { CommunityPage } from './pages/CommunityPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import './App.css';
@@ -32,6 +33,7 @@ function App() {
                   <Route path="/cv-builder" element={<CVBuilderPage />} />
                   <Route path="/assistant" element={<AssistantPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/community" element={<CommunityPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
                   <Route path="/privacy" element={<ComingSoon page="Privacy Policy" />} />
