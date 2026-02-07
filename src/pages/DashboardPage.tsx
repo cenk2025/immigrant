@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FileText, BookOpen, MessageCircle, User, LogOut, TrendingUp } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,15 +15,7 @@ export const DashboardPage: React.FC = () => {
     const [recentCVs, setRecentCVs] = useState<CVVersion[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (!user) {
-            navigate('/login');
-            return;
-        }
-        loadDashboardData();
-    }, [user, navigate]);
-
-    const loadDashboardData = async () => {
+    const loadDashboardData = useCallback(async () => {
         if (!user) return;
 
         setLoading(true);
@@ -42,7 +34,15 @@ export const DashboardPage: React.FC = () => {
         }
 
         setLoading(false);
-    };
+    }, [user]);
+
+    useEffect(() => {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+        loadDashboardData();
+    }, [user, navigate, loadDashboardData]);
 
     const handleSignOut = async () => {
         await signOut();

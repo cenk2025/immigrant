@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Download, Save, Plus, Trash2, Upload, Camera, Sparkles, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -43,15 +43,7 @@ export const CVBuilderPage: React.FC = () => {
     const [showAnalysisModal, setShowAnalysisModal] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        if (!user) {
-            navigate('/login');
-            return;
-        }
-        loadCVList();
-    }, [user, navigate]);
-
-    const loadCVList = async () => {
+    const loadCVList = useCallback(async () => {
         if (!user) return;
 
         setLoading(true);
@@ -65,7 +57,15 @@ export const CVBuilderPage: React.FC = () => {
             setCvList(data);
         }
         setLoading(false);
-    };
+    }, [user]);
+
+    useEffect(() => {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+        loadCVList();
+    }, [user, navigate, loadCVList]);
 
     const loadCV = (cv: CVVersion) => {
         setCurrentCV(cv.data);
@@ -117,9 +117,9 @@ export const CVBuilderPage: React.FC = () => {
 
             // Trigger AI analysis after successful save
             analyzeCV().catch(console.error); // Run in background
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error saving CV:', error);
-            alert(`Failed to save CV: ${error.message || 'Unknown error'}`);
+            alert(`Failed to save CV: ${(error as Error).message || 'Unknown error'}`);
         } finally {
             setSaving(false);
         }
@@ -215,7 +215,7 @@ export const CVBuilderPage: React.FC = () => {
             });
 
             // Update yPos based on table
-            // @ts-ignore
+            // @ts-expect-error - jspdf-autotable adds this property
             yPos = doc.lastAutoTable.finalY + 10;
         }
 
@@ -242,7 +242,7 @@ export const CVBuilderPage: React.FC = () => {
                 }
             });
 
-            // @ts-ignore
+            // @ts-expect-error - jspdf-autotable adds this property
             yPos = doc.lastAutoTable.finalY + 10;
         }
 
@@ -291,7 +291,7 @@ export const CVBuilderPage: React.FC = () => {
         });
     };
 
-    const updateExperience = (id: string, field: string, value: any) => {
+    const updateExperience = (id: string, field: string, value: string | boolean) => {
         setCurrentCV({
             ...currentCV,
             experience: currentCV.experience.map((exp) =>
@@ -326,7 +326,7 @@ export const CVBuilderPage: React.FC = () => {
         });
     };
 
-    const updateEducation = (id: string, field: string, value: any) => {
+    const updateEducation = (id: string, field: string, value: string | boolean) => {
         setCurrentCV({
             ...currentCV,
             education: currentCV.education.map((edu) =>
