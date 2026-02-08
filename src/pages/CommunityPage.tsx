@@ -17,6 +17,7 @@ export const CommunityPage: React.FC = () => {
     const [showNewPostModal, setShowNewPostModal] = useState(false);
     const [newPost, setNewPost] = useState({ title: '', content: '', category: 'Work Culture' });
     const [submitting, setSubmitting] = useState(false);
+    const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null);
 
     useEffect(() => {
         fetchPosts();
@@ -115,7 +116,7 @@ export const CommunityPage: React.FC = () => {
                 ) : filteredPosts.length > 0 ? (
                     <div className="posts-grid">
                         {filteredPosts.map((post) => (
-                            <div key={post.id} className="post-card">
+                            <div key={post.id} className="post-card" onClick={() => setSelectedPost(post)}>
                                 <div className="post-header">
                                     <div className="post-category">{post.category}</div>
                                     <div className="post-date">
@@ -207,6 +208,45 @@ export const CommunityPage: React.FC = () => {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* View Post Modal */}
+            {selectedPost && (
+                <div className="modal-overlay" onClick={() => setSelectedPost(null)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <div className="post-header-details">
+                                <span className="post-category tag">{selectedPost.category}</span>
+                                <span className="post-date-detail">
+                                    <Calendar size={14} />
+                                    {new Date(selectedPost.created_at).toLocaleDateString()}
+                                </span>
+                            </div>
+                            <button onClick={() => setSelectedPost(null)}>
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <h2 className="post-detail-title">{selectedPost.title}</h2>
+
+                        <div className="post-detail-author">
+                            <User size={16} />
+                            <span>{selectedPost.author_name}</span>
+                        </div>
+
+                        <div className="post-detail-content">
+                            {selectedPost.content.split('\n').map((paragraph, idx) => (
+                                <p key={idx}>{paragraph}</p>
+                            ))}
+                        </div>
+
+                        <div className="modal-actions">
+                            <button className="btn btn-secondary" onClick={() => setSelectedPost(null)}>
+                                Close
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
