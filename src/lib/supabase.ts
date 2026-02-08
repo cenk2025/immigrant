@@ -111,3 +111,12 @@ export interface CommunityPost {
     };
     author_name: string;
 }
+
+export interface CommunityComment {
+    id: string;
+    post_id: string;
+    user_id: string;
+    content: string;
+    author_name: string;
+    created_at: string;
+}
