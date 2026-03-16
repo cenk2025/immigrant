@@ -120,3 +120,33 @@ export interface CommunityComment {
     author_name: string;
     created_at: string;
 }
+
+export interface MentorshipProfile {
+    id: string;
+    user_id: string;
+    display_name: string;
+    role: 'mentor' | 'mentee';
+    background?: string;
+    areas?: string[];
+    is_available: boolean;
+    agreed_to_terms: boolean;
+    created_at: string;
+}
+
+export interface MentorshipMatch {
+    id: string;
+    mentee_id: string;
+    mentor_id: string;
+    status: 'pending' | 'active' | 'rejected';
+    mentee_agreed: boolean;
+    mentor_agreed: boolean;
+    created_at: string;
+}
+
+export interface MentorshipMessage {
+    id: string;
+    match_id: string;
+    sender_id: string;
+    content: string;
+    created_at: string;
+}
