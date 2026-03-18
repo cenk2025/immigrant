@@ -44,6 +44,14 @@ export const translations = {
         title: 'Personal Dashboard',
         description: 'Manage your CV versions, track your progress, and access saved resources.',
       },
+      community: {
+        title: 'Community Forum',
+        description: 'Connect with fellow immigrants, share experiences, ask questions and support each other.',
+      },
+      mentorship: {
+        title: 'Peer Mentorship',
+        description: 'Get anonymous, private guidance from someone who has already navigated Finnish working life.',
+      },
     },
 
     // Guide Topics
@@ -193,6 +201,14 @@ export const translations = {
       dashboard: {
         title: 'Henkilökohtainen Hallintapaneeli',
         description: 'Hallitse CV-versioitasi, seuraa edistymistäsi ja käytä tallennettuja resursseja.',
+      },
+      community: {
+        title: 'Yhteisöfoorumi',
+        description: 'Yhdistä muiden maahanmuuttajien kanssa, jaa kokemuksia, kysy kysymyksiä ja tue toisianne.',
+      },
+      mentorship: {
+        title: 'Vertaismentorointi',
+        description: 'Saa anonyymiä ja yksityistä ohjausta henkilöltä, joka on jo navigoinut suomalaisen työelämän.',
       },
     },
 

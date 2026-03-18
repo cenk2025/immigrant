@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, FileText, MessageCircle, LayoutDashboard, ArrowRight, CheckCircle } from 'lucide-react';
+import { BookOpen, FileText, MessageCircle, LayoutDashboard, ArrowRight, CheckCircle, Users, HandshakeIcon } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import './HomePage.css';
 
@@ -42,6 +42,20 @@ export const HomePage: React.FC = () => {
             description: t('features.dashboard.description'),
             link: '/dashboard',
             color: 'primary',
+        },
+        {
+            icon: <Users size={32} />,
+            title: t('features.community.title'),
+            description: t('features.community.description'),
+            link: '/community',
+            color: 'secondary',
+        },
+        {
+            icon: <HandshakeIcon size={32} />,
+            title: t('features.mentorship.title'),
+            description: t('features.mentorship.description'),
+            link: '/mentorship',
+            color: 'accent',
         },
     ];
 
