@@ -217,6 +217,49 @@ export const MentorshipPage: React.FC = () => {
         return () => { supabase.removeChannel(channel); };
     }, [step, activeMatch]);
 
+    // ── Poll for mentee: detect when mentor accepts the request ───────────────
+    useEffect(() => {
+        if (step !== 'pending-request' || !activeMatch) return;
+        const interval = setInterval(async () => {
+            const { data } = await supabase
+                .from('mentorship_matches')
+                .select('*')
+                .eq('id', activeMatch.id)
+                .single();
+            if (data) {
+                const updated = data as MentorshipMatch;
+                setActiveMatch(updated);
+                if (updated.status === 'active') {
+                    clearInterval(interval);
+                    // Reload partner profile before going to agreement
+                    const partnerId = myProfile?.role === 'mentee' ? updated.mentor_id : updated.mentee_id;
+                    const { data: partnerData } = await supabase
+                        .from('mentorship_profiles')
+                        .select('id, user_id, display_name, role, background, areas, is_available, agreed_to_terms, created_at')
+                        .eq('user_id', partnerId)
+                        .maybeSingle();
+                    if (partnerData) setMatchPartnerProfile(partnerData as MentorshipProfile);
+                    setStep('agreement');
+                } else if (updated.status === 'rejected') {
+                    clearInterval(interval);
+                    setActiveMatch(null);
+                    await loadMentors();
+                    setStep('directory');
+                }
+            }
+        }, 4000);
+        return () => clearInterval(interval);
+    }, [step, activeMatch]);
+
+    // ── Poll for mentor: detect new incoming match requests ───────────────────
+    useEffect(() => {
+        if (step !== 'incoming-requests' || !myProfile) return;
+        const interval = setInterval(async () => {
+            await loadIncomingRequests(myProfile);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [step, myProfile]);
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -530,12 +573,13 @@ export const MentorshipPage: React.FC = () => {
             <h2>Match Request Sent!</h2>
             <p>
                 Your request has been sent to <strong>{matchPartnerProfile?.display_name ?? 'the mentor'}</strong>.
-                <br />You'll be notified as soon as they accept.
+                <br />Waiting for them to accept... This page will update automatically.
             </p>
             <div className="mp-status-note">
                 <Shield size={16} />
                 <span>No personal information has been shared.</span>
             </div>
+            <p className="mp-polling-hint">🔴 Checking for updates every 4 seconds...</p>
         </div>
     );
 
@@ -544,6 +588,15 @@ export const MentorshipPage: React.FC = () => {
             <div className="mp-section-header">
                 <h2>Your Mentor Dashboard</h2>
                 <p>Mentees who want to connect with you. Accept to open the agreement process.</p>
+                <div className="mp-incoming-meta">
+                    <span className="mp-polling-badge">🔴 Live — checking every 5s</span>
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => myProfile && loadIncomingRequests(myProfile)}
+                    >
+                        ↻ Refresh
+                    </button>
+                </div>
             </div>
             {incomingRequests.length === 0 ? (
                 <div className="mp-empty">

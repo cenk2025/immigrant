@@ -60,7 +60,7 @@ export const DashboardPage: React.FC = () => {
                         <h1>{t('dashboard.welcome')}, {user.user_metadata?.full_name || user.email}!</h1>
                         <p>Track your career development progress and manage your resources</p>
                     </div>
-                    <button onClick={handleSignOut} className="btn btn-secondary">
+                    <button onClick={handleSignOut} className="btn btn-logout">
                         <LogOut size={18} />
                         {t('nav.logout')}
                     </button>

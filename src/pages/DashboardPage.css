@@ -294,3 +294,20 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Logout Button */
+.btn-logout {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+    border: 1.5px solid rgba(239, 68, 68, 0.3);
+    font-weight: 600;
+    transition: all var(--transition-base);
+}
+
+.btn-logout:hover {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}

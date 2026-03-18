@@ -405,6 +405,27 @@
     margin-top: 0.5rem;
 }
 
+.mp-incoming-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.mp-polling-badge {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    letter-spacing: 0.03em;
+}
+
+.mp-polling-hint {
+    font-size: 0.8rem;
+    color: var(--color-text-tertiary);
+    margin-top: 1rem;
+}
+
 /* ── Mentor Directory ────────────────────────────────────────── */
 .mp-mentor-grid {
     display: grid;
