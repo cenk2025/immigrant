@@ -260,6 +260,13 @@ export const MentorshipPage: React.FC = () => {
         return () => clearInterval(interval);
     }, [step, myProfile]);
 
+    // ── Poll for messages in chat (backup if realtime not configured) ─────────
+    useEffect(() => {
+        if (step !== 'chat' || !activeMatch) return;
+        const interval = setInterval(() => { loadMessages(); }, 3000);
+        return () => clearInterval(interval);
+    }, [step, activeMatch]);
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
@@ -407,16 +414,27 @@ export const MentorshipPage: React.FC = () => {
         }, 3000);
     };
 
+    const [chatError, setChatError] = useState<string | null>(null);
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user || !activeMatch || !newMessage.trim()) return;
+        setChatError(null);
         setSendingMessage(true);
-        await supabase.from('mentorship_messages').insert([{
+        const text = newMessage.trim();
+        setNewMessage(''); // optimistic clear
+        const { error: sendErr } = await supabase.from('mentorship_messages').insert([{
             match_id: activeMatch.id,
             sender_id: user.id,
-            content: newMessage.trim(),
+            content: text,
         }]);
-        setNewMessage('');
+        if (sendErr) {
+            setChatError('Message failed: ' + sendErr.message);
+            setNewMessage(text); // restore on failure
+        } else {
+            // Reload as backup in case realtime doesn't fire
+            await loadMessages();
+        }
         setSendingMessage(false);
     };
 
@@ -758,21 +776,28 @@ export const MentorshipPage: React.FC = () => {
                 </div>
 
                 <form className="mp-chat-input-area" onSubmit={handleSendMessage}>
-                    <input
-                        className="mp-chat-input"
-                        type="text"
-                        value={newMessage}
-                        onChange={e => setNewMessage(e.target.value)}
-                        placeholder="Type a message... (only display names are shared)"
-                        disabled={sendingMessage}
-                    />
-                    <button
-                        type="submit"
-                        className="btn btn-primary mp-send-btn"
-                        disabled={!newMessage.trim() || sendingMessage}
-                    >
-                        <Send size={18} />
-                    </button>
+                    {chatError && (
+                        <div className="mp-chat-error">
+                            <AlertTriangle size={14} /> {chatError}
+                        </div>
+                    )}
+                    <div className="mp-chat-input-row">
+                        <input
+                            className="mp-chat-input"
+                            type="text"
+                            value={newMessage}
+                            onChange={e => setNewMessage(e.target.value)}
+                            placeholder="Type a message... (only display names are shared)"
+                            disabled={sendingMessage}
+                        />
+                        <button
+                            type="submit"
+                            className="btn btn-primary mp-send-btn"
+                            disabled={!newMessage.trim() || sendingMessage}
+                        >
+                            {sendingMessage ? <Loader size={18} className="spin" /> : <Send size={18} />}
+                        </button>
+                    </div>
                 </form>
             </div>
         );

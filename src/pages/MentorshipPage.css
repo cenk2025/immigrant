@@ -890,11 +890,28 @@
 /* ── Chat Input ──────────────────────────────────────────────── */
 .mp-chat-input-area {
     display: flex;
-    gap: 0.75rem;
+    flex-direction: column;
+    gap: 0.5rem;
     padding: 1rem 1.5rem;
     border-top: 1px solid var(--color-border);
     background: var(--color-bg-elevated);
     flex-shrink: 0;
+}
+
+.mp-chat-input-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.mp-chat-error {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--color-error);
+    padding: 0.35rem 0.75rem;
+    background: rgba(239, 68, 68, 0.08);
+    border-radius: 8px;
 }
 
 .mp-chat-input {
