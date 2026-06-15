@@ -41,6 +41,8 @@ export const DashboardPage: React.FC = () => {
             navigate('/login');
             return;
         }
+        // Intentional: kick off the initial data load (which toggles `loading`) on mount.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadDashboardData();
     }, [user, navigate, loadDashboardData]);
 

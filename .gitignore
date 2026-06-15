@@ -17,6 +17,8 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+# macOS AppleDouble metadata files (created on external/exFAT drives)
+._*
 *.suo
 *.ntvs*
 *.njsproj

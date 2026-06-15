@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import type { CommunityPost, CommunityComment } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,18 +21,13 @@ export const CommunityPage: React.FC = () => {
     const [postComments, setPostComments] = useState<CommunityComment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [commentSubmitting, setCommentSubmitting] = useState(false);
-    const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
-
-    useEffect(() => {
-        // Load liked posts from local storage on mount
+    const [likedPosts, setLikedPosts] = useState<Set<string>>(() => {
+        // Restore the user's liked posts from local storage on first render.
         const savedLikes = localStorage.getItem('liked_posts');
-        if (savedLikes) {
-            setLikedPosts(new Set(JSON.parse(savedLikes)));
-        }
-        fetchPosts();
-    }, []);
+        return savedLikes ? new Set<string>(JSON.parse(savedLikes)) : new Set<string>();
+    });
 
-    const fetchPosts = async () => {
+    const fetchPosts = useCallback(async () => {
         setLoading(true);
         // We'll fetch just posts for now, and try to get counts if possible
         const { data, error } = await supabase
@@ -59,9 +54,9 @@ export const CommunityPage: React.FC = () => {
             setPosts(postsWithCounts as (CommunityPost & { comment_count?: number })[]);
         }
         setLoading(false);
-    };
+    }, []);
 
-    const fetchComments = async (postId: string) => {
+    const fetchComments = useCallback(async (postId: string) => {
         const { data, error } = await supabase
             .from('community_comments')
             .select('*')
@@ -71,16 +66,24 @@ export const CommunityPage: React.FC = () => {
         if (!error && data) {
             setPostComments(data);
         }
-    };
+    }, []);
 
     useEffect(() => {
+        // Intentional initial data load on mount (toggles `loading`).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        fetchPosts();
+    }, [fetchPosts]);
+
+    // Load comments when a post is opened; clear them when the modal closes.
+    useEffect(() => {
         if (selectedPost) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             fetchComments(selectedPost.id);
         } else {
             setPostComments([]);
             setNewComment('');
         }
-    }, [selectedPost]);
+    }, [selectedPost, fetchComments]);
 
     const handleCreatePost = async (e: React.FormEvent) => {
         e.preventDefault();

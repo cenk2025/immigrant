@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Cookie } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import './CookieConsent.css';
@@ -11,20 +11,16 @@ interface CookiePreferences {
 
 export const CookieConsent: React.FC = () => {
     const { t } = useLanguage();
-    const [showBanner, setShowBanner] = useState(false);
+    // Show the banner only when the user has not yet stored a consent choice.
+    const [showBanner, setShowBanner] = useState(
+        () => !localStorage.getItem('worklife-cookie-consent')
+    );
     const [showPreferences, setShowPreferences] = useState(false);
     const [preferences, setPreferences] = useState<CookiePreferences>({
         necessary: true,
         analytics: false,
         marketing: false,
     });
-
-    useEffect(() => {
-        const consent = localStorage.getItem('worklife-cookie-consent');
-        if (!consent) {
-            setShowBanner(true);
-        }
-    }, []);
 
     const handleAcceptAll = () => {
         const allAccepted = {

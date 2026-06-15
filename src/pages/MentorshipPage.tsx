@@ -84,11 +84,6 @@ export const MentorshipPage: React.FC = () => {
         areas: [] as string[],
     });
 
-    // ── Initial Load ─────────────────────────────────────────────────────────
-    useEffect(() => {
-        if (user) loadMyProfile();
-    }, [user]);
-
     const loadMyProfile = async () => {
         setLoading(true);
         const { data } = await supabase
@@ -200,6 +195,22 @@ export const MentorshipPage: React.FC = () => {
         }
     };
 
+    const loadMessages = async () => {
+        if (!activeMatch) return;
+        const { data } = await supabase
+            .from('mentorship_messages')
+            .select('*')
+            .eq('match_id', activeMatch.id)
+            .order('created_at', { ascending: true });
+        if (data) setMessages(data as MentorshipMessage[]);
+    };
+
+    // ── Initial Load ─────────────────────────────────────────────────────────
+    useEffect(() => {
+        if (user) loadMyProfile();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
+
     // ── Realtime chat subscription ────────────────────────────────────────────
     useEffect(() => {
         if (step !== 'chat' || !activeMatch) return;
@@ -215,6 +226,8 @@ export const MentorshipPage: React.FC = () => {
             )
             .subscribe();
         return () => { supabase.removeChannel(channel); };
+        // loadMessages is intentionally omitted to avoid re-subscribing every render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step, activeMatch]);
 
     // ── Poll for mentee: detect when mentor accepts the request ───────────────
@@ -249,6 +262,8 @@ export const MentorshipPage: React.FC = () => {
             }
         }, 4000);
         return () => clearInterval(interval);
+        // loadMentors is intentionally omitted to keep the poll interval stable.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step, activeMatch]);
 
     // ── Poll for mentor: detect new incoming match requests ───────────────────
@@ -258,6 +273,8 @@ export const MentorshipPage: React.FC = () => {
             await loadIncomingRequests(myProfile);
         }, 5000);
         return () => clearInterval(interval);
+        // loadIncomingRequests is intentionally omitted to keep the poll interval stable.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step, myProfile]);
 
     // ── Poll for messages in chat (backup if realtime not configured) ─────────
@@ -265,21 +282,13 @@ export const MentorshipPage: React.FC = () => {
         if (step !== 'chat' || !activeMatch) return;
         const interval = setInterval(() => { loadMessages(); }, 3000);
         return () => clearInterval(interval);
+        // loadMessages is intentionally omitted to keep the poll interval stable.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step, activeMatch]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
-
-    const loadMessages = async () => {
-        if (!activeMatch) return;
-        const { data } = await supabase
-            .from('mentorship_messages')
-            .select('*')
-            .eq('match_id', activeMatch.id)
-            .order('created_at', { ascending: true });
-        if (data) setMessages(data as MentorshipMessage[]);
-    };
 
     // ── Actions ───────────────────────────────────────────────────────────────
     const handleRegister = async (role: 'mentor' | 'mentee') => {

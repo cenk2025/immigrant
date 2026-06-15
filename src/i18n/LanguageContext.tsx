@@ -27,11 +27,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     const t = (key: string): string => {
         const keys = key.split('.');
-        let value: any = translations[language];
+        let value: unknown = translations[language];
 
         for (const k of keys) {
             if (value && typeof value === 'object') {
-                value = value[k];
+                value = (value as Record<string, unknown>)[k];
             } else {
                 return key;
             }
@@ -47,6 +47,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useLanguage = () => {
     const context = useContext(LanguageContext);
     if (!context) {
