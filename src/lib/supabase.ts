@@ -44,6 +44,19 @@ export interface CVData {
     skills: string[];
     languages: LanguageSkill[];
     certifications: Certification[];
+    /**
+     * Optional ESCO resolution of the free-text `skills` above, used by the
+     * skill-recommendation engine to know what the user already has. Additive:
+     * older CVs simply omit it. Each entry links a CV skill label to an ESCO
+     * skill concept_uri.
+     */
+    skill_links?: SkillLink[];
+}
+
+/** Maps a free-text CV skill label to a resolved ESCO skill concept_uri. */
+export interface SkillLink {
+    label: string;
+    skill_uri: string;
 }
 
 export interface WorkExperience {
@@ -55,6 +68,8 @@ export interface WorkExperience {
     end_date?: string;
     current: boolean;
     description: string;
+    /** Optional ESCO occupation concept_uri the user confirmed for this role. */
+    esco_occupation_uri?: string;
 }
 
 export interface Education {

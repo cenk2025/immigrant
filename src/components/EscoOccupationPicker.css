@@ -1,0 +1,126 @@
+/* ESCO occupation matcher — unobtrusive control inside a CV experience entry */
+
+.esco-picker {
+    margin-top: var(--space-sm);
+}
+
+/* Collapsed trigger ("Match to ESCO occupation") */
+.esco-match-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: var(--space-sm);
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    color: var(--color-primary);
+    background: transparent;
+    border: 1px dashed var(--color-border-hover);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+.esco-match-trigger:hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-primary);
+}
+
+/* Collapsed matched state */
+.esco-matched-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+.esco-matched {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 0.82rem;
+    color: var(--color-success);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+}
+.esco-link-btn {
+    font-size: 0.78rem;
+    color: var(--color-text-secondary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 2px;
+}
+.esco-link-btn:hover { color: var(--color-text-primary); }
+.esco-link-btn.esco-danger:hover { color: var(--color-error); }
+
+/* Open search panel */
+.esco-open {
+    padding: var(--space-md);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+.esco-search-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+.esco-search-icon { color: var(--color-text-tertiary); flex: 0 0 auto; }
+.esco-search-input { flex: 1; }
+.esco-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: var(--color-text-secondary);
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+.esco-icon-btn:hover { background: var(--color-bg-tertiary); color: var(--color-text-primary); }
+
+.esco-hint {
+    margin: var(--space-sm) 0 0;
+    font-size: 0.78rem;
+    color: var(--color-text-tertiary);
+}
+
+.esco-results {
+    list-style: none;
+    margin: var(--space-sm) 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.esco-result {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: 8px 10px;
+    text-align: left;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+.esco-result:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-tertiary);
+}
+.esco-result-label {
+    font-size: 0.88rem;
+    color: var(--color-text-primary);
+}
+.esco-result-code {
+    font-size: 0.72rem;
+    color: var(--color-text-tertiary);
+    font-variant-numeric: tabular-nums;
+    flex: 0 0 auto;
+}

@@ -19,6 +19,12 @@ dist-ssr
 .DS_Store
 # macOS AppleDouble metadata files (created on external/exFAT drives)
 ._*
+
+# ESCO raw CSV data (imported into Supabase, not committed)
+supabase/esco-import/csv/
+
+# ESCO local API bundle (multi-GB Tomcat/Solr/Fuseki app) — never commit
+tomcat-esp-api-v03_94/
 *.suo
 *.ntvs*
 *.njsproj

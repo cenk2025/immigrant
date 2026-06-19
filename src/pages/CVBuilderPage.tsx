@@ -5,6 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { supabase } from '../lib/supabase';
 import type { CVVersion, CVData } from '../lib/supabase';
+import { EscoOccupationPicker } from '../components/EscoOccupationPicker';
+import { EscoSkillPicker } from '../components/EscoSkillPicker';
+import { CvSkillRecommendations } from '../components/CvSkillRecommendations';
 import jsPDF from 'jspdf';
 // import autoTable from 'jspdf-autotable'; // Removed as we use manual layout now
 import './CVBuilderPage.css';
@@ -385,7 +388,7 @@ export const CVBuilderPage: React.FC = () => {
         });
     };
 
-    const updateExperience = (id: string, field: string, value: string | boolean) => {
+    const updateExperience = (id: string, field: string, value: string | boolean | undefined) => {
         setCurrentCV({
             ...currentCV,
             experience: currentCV.experience.map((exp) =>
@@ -449,9 +452,32 @@ export const CVBuilderPage: React.FC = () => {
     };
 
     const removeSkill = (index: number) => {
+        const removed = currentCV.skills[index];
         setCurrentCV({
             ...currentCV,
             skills: currentCV.skills.filter((_, i) => i !== index),
+            // Drop any ESCO link for the removed skill label.
+            skill_links: (currentCV.skill_links || []).filter((l) => l.label !== removed),
+        });
+    };
+
+    // ── ESCO skill links (powers the recommendation engine's "already have" set) ──
+    const setSkillLink = (label: string, skillUri: string | undefined) => {
+        const others = (currentCV.skill_links || []).filter((l) => l.label !== label);
+        setCurrentCV({
+            ...currentCV,
+            skill_links: skillUri ? [...others, { label, skill_uri: skillUri }] : others,
+        });
+    };
+
+    // Add a recommended skill into the CV: append the label (if new) and record its link.
+    const addRecommendedSkill = (label: string, skillUri: string) => {
+        const hasLabel = currentCV.skills.includes(label);
+        const others = (currentCV.skill_links || []).filter((l) => l.skill_uri !== skillUri);
+        setCurrentCV({
+            ...currentCV,
+            skills: hasLabel ? currentCV.skills : [...currentCV.skills, label],
+            skill_links: [...others, { label, skill_uri: skillUri }],
         });
     };
 
@@ -906,6 +932,11 @@ Keep your response concise, professional, and actionable. Focus on practical adv
                                                     className="input"
                                                     placeholder="Software Developer"
                                                 />
+                                                <EscoOccupationPicker
+                                                    seedTitle={exp.title}
+                                                    value={exp.esco_occupation_uri}
+                                                    onChange={(uri) => updateExperience(exp.id, 'esco_occupation_uri', uri)}
+                                                />
                                             </div>
                                             <div className="form-group">
                                                 <label className="label">Company</label>
@@ -1094,6 +1125,30 @@ Keep your response concise, professional, and actionable. Focus on practical adv
                                 {currentCV.skills.length === 0 && (
                                     <p className="empty-state">No skills added yet.</p>
                                 )}
+
+                                {/* Optional: link existing free-text skills to ESCO so the
+                                    recommendation engine knows what the user already has. */}
+                                {currentCV.skills.length > 0 && (
+                                    <div className="esco-link-skills">
+                                        {currentCV.skills.map((skill, index) => (
+                                            <div key={index} className="esco-link-skill-row">
+                                                <span className="esco-link-skill-name">{skill}</span>
+                                                <EscoSkillPicker
+                                                    seedText={skill}
+                                                    value={(currentCV.skill_links || []).find((l) => l.label === skill)?.skill_uri}
+                                                    onChange={(uri) => setSkillLink(skill, uri)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* History-based recommendations */}
+                                <CvSkillRecommendations
+                                    experience={currentCV.experience}
+                                    skillLinks={currentCV.skill_links || []}
+                                    onAdd={addRecommendedSkill}
+                                />
 
                                 <div className="cv-form-header" style={{ marginTop: '2rem' }}>
                                     <h3>Languages</h3>
