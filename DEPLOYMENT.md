@@ -68,10 +68,12 @@ git push -u origin main
 Build Settings'de şu environment variable'ları ekle:
 
 ```
-VITE_SUPABASE_URL=https://rrkfwshzcxcnwhmusuhd.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJya2Z3c2h6Y3hjbndobXVzdWhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyMTExODksImV4cCI6MjA4MTc4NzE4OX0.AHbIie6aPRI430OffYokfeXJ1po6YztiuzQingj_NF4
-VITE_DEEPSEEK_API_KEY=sk-5fba3c36074349d3a2715d6e5860cd89
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+DEEPSEEK_API_KEY=your_deepseek_api_key
 ```
+
+> `DEEPSEEK_API_KEY` has no `VITE_` prefix — it must stay server-side only, read by `api/chat.ts`. Never store real credentials in this file; use `.env` (gitignored) or the Vercel dashboard.
 
 ### 3. Deploy
 

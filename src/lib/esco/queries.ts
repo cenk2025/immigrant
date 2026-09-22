@@ -12,6 +12,8 @@ import type {
   OccupationCandidate,
   SkillCandidate,
   RecommendedSkill,
+  CareerPath,
+  SkillRef,
   EscoSkillType,
   EscoReuseLevel,
 } from './types';
@@ -42,6 +44,18 @@ interface RecommendSkillRow {
   demand_count: number;
   score: number;
   why_occupations: string[] | null;
+}
+interface CareerPathRow {
+  occupation_uri: string;
+  label: string;
+  isco_group: string | null;
+  field_label: string | null;
+  description: string | null;
+  match_pct: number;
+  shared_count: number;
+  essential_count: number;
+  shared_skills: SkillRef[] | null;
+  missing_skills: SkillRef[] | null;
 }
 
 const MIN_QUERY = 2;
@@ -165,5 +179,43 @@ export async function recommendCvSkills(
     demandCount: r.demand_count,
     score: r.score,
     whyOccupations: r.why_occupations ?? [],
+  }));
+}
+
+/**
+ * Career-pivot suggestions. Given the ESCO occupation URIs from the user's work
+ * history (and, optionally, extra skill URIs they hold), returns *other*
+ * occupations their current skills already qualify them for, ranked by skill
+ * overlap, each with the skills they bring and the gap to close. All ranking
+ * math lives in the recommend_career_paths RPC; this only fetches and maps.
+ */
+export async function recommendCareerPaths(
+  occupationUris: string[],
+  extraSkillUris: string[],
+  locale: Locale,
+  limit = 12
+): Promise<CareerPath[]> {
+  if (occupationUris.length === 0) return [];
+  const { data, error } = await supabase.rpc('recommend_career_paths', {
+    p_occupation_uris: occupationUris,
+    p_extra_skill_uris: extraSkillUris,
+    p_locale: locale,
+    p_limit: limit,
+  });
+  if (error) {
+    console.error('recommendCareerPaths failed:', error.message);
+    return [];
+  }
+  return (data as CareerPathRow[] | null ?? []).map((r) => ({
+    occupationUri: r.occupation_uri,
+    label: r.label,
+    iscoGroup: r.isco_group,
+    fieldLabel: r.field_label,
+    description: r.description,
+    matchPct: r.match_pct,
+    sharedCount: r.shared_count,
+    essentialCount: r.essential_count,
+    sharedSkills: r.shared_skills ?? [],
+    missingSkills: r.missing_skills ?? [],
   }));
 }

@@ -74,14 +74,16 @@ Install Command: npm install
 |-----|-------|----------------|
 | `VITE_SUPABASE_URL` | `https://xxx.supabase.co` | Supabase > Settings > API |
 | `VITE_SUPABASE_ANON_KEY` | `eyJhbGc...` | Supabase > Settings > API |
-| `VITE_DEEPSEEK_API_KEY` | `sk-...` | DeepSeek Dashboard |
+| `DEEPSEEK_API_KEY` | `sk-...` | DeepSeek Dashboard — **no `VITE_` prefix**, server-side only |
 
 **Örnek:**
 ```
 VITE_SUPABASE_URL=https://hqyzvyiqnsxhqzbihrxo.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-VITE_DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxx
+DEEPSEEK_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxx
 ```
+
+> ⚠️ `DEEPSEEK_API_KEY` must NOT have the `VITE_` prefix — that prefix tells Vite to inline the value into the public JS bundle, exposing it to anyone visiting the site. It's read server-side only, by `api/chat.ts`.
 
 #### Adım 5: Deploy!
 1. **Deploy** butonuna tıkla

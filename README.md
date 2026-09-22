@@ -147,7 +147,7 @@ git push -u origin main
 2. Add environment variables:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_DEEPSEEK_API_KEY`
+   - `DEEPSEEK_API_KEY` (server-side only, no `VITE_` prefix — read by `api/chat.ts`)
 3. Deploy automatically on push
 
 ### Custom Domain
@@ -155,10 +155,12 @@ Configure `worklife.voon.fi` in Vercel dashboard
 
 ## 🔧 **Environment Variables**
 
+See `.env.example` for the full list. Never commit real values — `.env` is gitignored.
+
 ```env
-VITE_SUPABASE_URL=https://rrkfwshzcxcnwhmusuhd.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-VITE_DEEPSEEK_API_KEY=sk-5fba3c36074349d3a2715d6e5860cd89
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+DEEPSEEK_API_KEY=your_deepseek_api_key   # server-side only, no VITE_ prefix
 ```
 
 ## 📱 **Features by Page**

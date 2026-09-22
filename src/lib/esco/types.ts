@@ -35,6 +35,37 @@ export interface SkillCandidate {
   similarity: number;
 }
 
+/** A skill reference (uri + resolved label) returned inside a career path. */
+export interface SkillRef {
+  uri: string;
+  label: string;
+}
+
+/**
+ * One ranked alternative occupation from the `recommend_career_paths` RPC.
+ * "Given your work history, here's another occupation your skills already fit,
+ * and the gap to close for it."
+ */
+export interface CareerPath {
+  occupationUri: string;
+  label: string;
+  /** ISCO group code (e.g. '2512'); null if the occupation has none. */
+  iscoGroup: string | null;
+  /** Human-readable field/group label (needs esco_isco_groups import); else null. */
+  fieldLabel: string | null;
+  description: string | null;
+  /** 0–100: share of this occupation's essential skills the user already has. */
+  matchPct: number;
+  /** How many essential skills the user already brings. */
+  sharedCount: number;
+  /** Total essential skills this occupation requires. */
+  essentialCount: number;
+  /** Skills the user already has for this occupation (the "you bring" set). */
+  sharedSkills: SkillRef[];
+  /** Essential skills the user is missing (the gap to close). */
+  missingSkills: SkillRef[];
+}
+
 /** One ranked row from the `recommend_cv_skills` RPC (Part C). */
 export interface RecommendedSkill {
   skillUri: string;

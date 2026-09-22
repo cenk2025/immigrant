@@ -553,13 +553,6 @@ export const CVBuilderPage: React.FC = () => {
         setAiImproving(true);
 
         try {
-            const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
-            if (!apiKey) {
-                alert('AI feature is not configured');
-                setAiImproving(false);
-                return;
-            }
-
             let currentText = '';
             let prompt = '';
 
@@ -574,14 +567,12 @@ export const CVBuilderPage: React.FC = () => {
                 }
             }
 
-            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`,
                 },
                 body: JSON.stringify({
-                    model: 'deepseek-chat',
                     messages: [
                         {
                             role: 'system',
@@ -624,13 +615,6 @@ export const CVBuilderPage: React.FC = () => {
         setCvAnalysis(null);
 
         try {
-            const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
-            if (!apiKey) {
-                alert('AI feature is not configured');
-                setAnalyzingCV(false);
-                return;
-            }
-
             // Prepare CV summary for analysis
             const cvSummary = {
                 profile: {
@@ -668,14 +652,12 @@ Please provide:
 
 Keep your response concise, professional, and actionable. Focus on practical advice.`;
 
-            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`,
                 },
                 body: JSON.stringify({
-                    model: 'deepseek-chat',
                     messages: [
                         {
                             role: 'system',

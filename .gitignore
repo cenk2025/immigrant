@@ -30,3 +30,11 @@ tomcat-esp-api-v03_94/
 *.njsproj
 *.sln
 *.sw?
+
+# Personal Claude Code overrides (machine-local; e.g. the wrong-project reminder hook)
+.claude/settings.local.json
+
+# Secrets — never commit real credentials
+.env
+.env.local
+.env.*.local

@@ -5,6 +5,7 @@ export const translations = {
       home: 'Home',
       guide: 'Working Life Guide',
       cvBuilder: 'CV Builder',
+      careerPaths: 'Career Paths',
       dashboard: 'Dashboard',
       assistant: 'Assistant',
       employerGuide: 'For Employers',
@@ -113,6 +114,30 @@ export const translations = {
       },
     },
 
+    // Career Paths (ESCO career-pivot)
+    careerPaths: {
+      title: 'Career Paths',
+      subtitle: 'Discover where your current skills can take you next. We compare the skills behind your work history against every other occupation and rank the best fits.',
+      basedOn: 'Based on your experience',
+      basedOnHint: 'Pulled from the occupations confirmed in your CVs. Add or remove any to refine the suggestions.',
+      loadingSources: 'Loading your experience…',
+      noSources: 'No occupations yet — add one below or confirm job titles in your CV.',
+      addPlaceholder: 'Add another occupation…',
+      searching: 'Searching…',
+      remove: 'Remove',
+      resultsTitle: 'Occupations that fit you',
+      match: 'match',
+      matchTitle: 'Share of this occupation’s core skills you already have',
+      youHave: 'You already have {shared} of {total} core skills.',
+      youBring: 'You bring',
+      toLearn: 'Skills to develop',
+      about: 'About this occupation',
+      emptyTitle: 'Confirm the job titles in your CV to see career paths.',
+      goToCv: 'Open CV Builder',
+      noResults: 'No close matches yet. Try adding more occupations above.',
+      disclaimer: 'Suggestions are based on the ESCO occupation–skill framework and are guidance only, not a guarantee of employment.',
+    },
+
     // Dashboard
     dashboard: {
       title: 'Dashboard',
@@ -186,6 +211,7 @@ export const translations = {
       home: 'Etusivu',
       guide: 'Työelämäopas',
       cvBuilder: 'CV-työkalu',
+      careerPaths: 'Urapolut',
       dashboard: 'Hallintapaneeli',
       assistant: 'Assistentti',
       employerGuide: 'Työnantajille',
@@ -292,6 +318,30 @@ export const translations = {
         loading: 'Ladataan suosituksia…',
         showDescription: 'Tiedot',
       },
+    },
+
+    // Career Paths (ESCO career-pivot)
+    careerPaths: {
+      title: 'Urapolut',
+      subtitle: 'Näe, minne nykyiset taitosi voivat viedä seuraavaksi. Vertaamme työhistoriasi taitoja kaikkiin muihin ammatteihin ja järjestämme parhaat osumat.',
+      basedOn: 'Kokemuksesi perusteella',
+      basedOnHint: 'Haettu CV:issäsi vahvistetuista ammateista. Lisää tai poista ammatteja tarkentaaksesi ehdotuksia.',
+      loadingSources: 'Ladataan kokemustasi…',
+      noSources: 'Ei vielä ammatteja — lisää alta tai vahvista työnimikkeet CV:ssäsi.',
+      addPlaceholder: 'Lisää toinen ammatti…',
+      searching: 'Haetaan…',
+      remove: 'Poista',
+      resultsTitle: 'Sinulle sopivat ammatit',
+      match: 'osuvuus',
+      matchTitle: 'Kuinka suuren osan tämän ammatin ydintaidoista sinulla jo on',
+      youHave: 'Sinulla on jo {shared}/{total} ydintaidosta.',
+      youBring: 'Tuot mukanasi',
+      toLearn: 'Kehitettävät taidot',
+      about: 'Tietoa ammatista',
+      emptyTitle: 'Vahvista CV:si työnimikkeet nähdäksesi urapolut.',
+      goToCv: 'Avaa CV-työkalu',
+      noResults: 'Ei vielä läheisiä osumia. Kokeile lisätä ammatteja yltä.',
+      disclaimer: 'Ehdotukset perustuvat ESCO:n ammatti–taito-viitekehykseen ja ovat vain ohjeellisia, eivät työllistymistakuu.',
     },
 
     // Dashboard

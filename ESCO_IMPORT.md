@@ -47,6 +47,22 @@ Expected magnitudes (v1.2.1): **~3,000** occupations, **~13,939** skills,
 > Steps 7–8 (`0104_esco_resolvers.sql`, `0105_recommend_cv_skills.sql`) arrive with
 > Parts B & C — run them after the data is in.
 
+### Career Paths feature (occupation pivot) — steps 9–11
+
+The `/career-paths` page ("Urapolut") suggests *other* occupations the user's
+current skills already fit. It runs on the **existing** `esco_` tables, so the
+core needs **no new import** — only the two RPC migrations. The ISCO-group step
+is optional and just adds a human-readable *field* label to each suggestion.
+
+| # | File | Where | What it does |
+|---|---|---|---|
+| 9 | `supabase/migrations/0107_recommend_career_paths.sql` | SQL Editor | The `recommend_career_paths` RPC (pure SQL over existing relations) |
+| 10 *(optional)* | `supabase/migrations/0106_esco_isco_groups.sql` | SQL Editor | Creates `esco_isco_groups` + RLS (field-label table) |
+| 11 *(optional)* | `supabase/esco-import/03_isco_groups.sql` | SQL Editor + Table Editor | Imports `ISCOGroups_en/fi.csv` → `esco_isco_groups` |
+
+> 0107 LEFT JOINs `esco_isco_groups`, so run it **with or without** steps 10–11.
+> If you skip 10–11, suggestions still work; the field label is just blank.
+
 ---
 
 ## 2. Importing the CSVs (step 3)

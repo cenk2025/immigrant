@@ -10,6 +10,7 @@ import { HomePage } from './pages/HomePage';
 import { GuidePage } from './pages/GuidePage';
 import { EmployerGuidePage } from './pages/EmployerGuidePage';
 import { CVBuilderPage } from './pages/CVBuilderPage';
+import { CareerPathsPage } from './pages/CareerPathsPage';
 import { AssistantPage } from './pages/AssistantPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { CommunityPage } from './pages/CommunityPage';
@@ -32,6 +33,7 @@ function App() {
                   <Route path="/guide" element={<GuidePage />} />
                   <Route path="/employer-guide" element={<EmployerGuidePage />} />
                   <Route path="/cv-builder" element={<CVBuilderPage />} />
+                  <Route path="/career-paths" element={<CareerPathsPage />} />
                   <Route path="/assistant" element={<AssistantPage />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/community" element={<CommunityPage />} />
