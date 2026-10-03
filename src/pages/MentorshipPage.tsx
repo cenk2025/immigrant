@@ -24,6 +24,7 @@ const AREAS = [
     'Tech / IT', 'Healthcare', 'Engineering', 'Finance', 'Marketing',
     'Education', 'Law', 'Construction', 'Hospitality', 'Language Learning',
     'Networking', 'Finnish Culture', 'Work Permits & Visas', 'University Life',
+    'Spouses & Family',
 ];
 
 // ─── Finnish Mentorship Agreement ─────────────────────────────────────────────
@@ -60,7 +61,9 @@ By clicking "I Agree", you confirm that you have read, understood, and accept al
 // ─── Component ────────────────────────────────────────────────────────────────
 export const MentorshipPage: React.FC = () => {
     const { user } = useAuth();
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
+    const prevMessageCount = useRef(0);
+    const stickToBottom = useRef(true);
 
     // Page step state machine
     const [step, setStep] = useState<Step>('landing');
@@ -202,7 +205,15 @@ export const MentorshipPage: React.FC = () => {
             .select('*')
             .eq('match_id', activeMatch.id)
             .order('created_at', { ascending: true });
-        if (data) setMessages(data as MentorshipMessage[]);
+        if (data) {
+            const next = data as MentorshipMessage[];
+            // Keep the same array when nothing changed so polling doesn't re-render the chat.
+            setMessages(prev =>
+                prev.length === next.length && prev[prev.length - 1]?.id === next[next.length - 1]?.id
+                    ? prev
+                    : next
+            );
+        }
     };
 
     // ── Initial Load ─────────────────────────────────────────────────────────
@@ -221,7 +232,8 @@ export const MentorshipPage: React.FC = () => {
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'mentorship_messages', filter: `match_id=eq.${activeMatch.id}` },
                 (payload) => {
-                    setMessages(prev => [...prev, payload.new as MentorshipMessage]);
+                    const incoming = payload.new as MentorshipMessage;
+                    setMessages(prev => prev.some(m => m.id === incoming.id) ? prev : [...prev, incoming]);
                 }
             )
             .subscribe();
@@ -286,9 +298,18 @@ export const MentorshipPage: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step, activeMatch]);
 
+    // Scroll only the chat box (never the window), and only when a new message arrives
+    // while the user is already at the bottom or sent it themselves.
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+        const el = messagesContainerRef.current;
+        const hasNew = messages.length > prevMessageCount.current;
+        prevMessageCount.current = messages.length;
+        if (!el || !hasNew) return;
+        const last = messages[messages.length - 1];
+        if (stickToBottom.current || last?.sender_id === user?.id) {
+            el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        }
+    }, [messages, user]);
 
     // ── Actions ───────────────────────────────────────────────────────────────
     const handleRegister = async (role: 'mentor' | 'mentee') => {
@@ -756,7 +777,14 @@ export const MentorshipPage: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="mp-chat-messages">
+                <div
+                    className="mp-chat-messages"
+                    ref={messagesContainerRef}
+                    onScroll={(e) => {
+                        const el = e.currentTarget;
+                        stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+                    }}
+                >
                     {messages.length === 0 && (
                         <div className="mp-chat-empty">
                             <MessageCircle size={48} />
@@ -781,7 +809,6 @@ export const MentorshipPage: React.FC = () => {
                             </div>
                         );
                     })}
-                    <div ref={messagesEndRef} />
                 </div>
 
                 <form className="mp-chat-input-area" onSubmit={handleSendMessage}>

@@ -15,6 +15,11 @@ import { AssistantPage } from './pages/AssistantPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { CommunityPage } from './pages/CommunityPage';
 import { MentorshipPage } from './pages/MentorshipPage';
+import { PathwayHubPage } from './pages/pathway/PathwayHubPage';
+import { PreArrivalPage } from './pages/pathway/PreArrivalPage';
+import { JobsPage } from './pages/pathway/JobsPage';
+import { FamilyPage } from './pages/pathway/FamilyPage';
+import { InstitutionsPage } from './pages/pathway/InstitutionsPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import './App.css';
@@ -38,6 +43,11 @@ function App() {
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/community" element={<CommunityPage />} />
                   <Route path="/mentorship" element={<MentorshipPage />} />
+                  <Route path="/pathway" element={<PathwayHubPage />} />
+                  <Route path="/pathway/pre-arrival" element={<PreArrivalPage />} />
+                  <Route path="/pathway/jobs" element={<JobsPage />} />
+                  <Route path="/pathway/family" element={<FamilyPage />} />
+                  <Route path="/pathway/institutions" element={<InstitutionsPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
                   <Route path="/privacy" element={<ComingSoon page="Privacy Policy" />} />

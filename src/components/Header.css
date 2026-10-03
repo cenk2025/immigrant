@@ -60,20 +60,24 @@
 }
 
 /* Navigation */
+.header .container {
+    max-width: 1600px;
+}
+
 .nav-desktop {
     display: flex;
     align-items: center;
-    gap: var(--space-lg);
+    gap: var(--space-xs);
     flex: 1;
     justify-content: center;
 }
 
 .nav-link {
-    font-size: 0.9375rem;
+    font-size: 0.9rem;
     font-weight: 500;
     color: var(--color-text-secondary);
     text-decoration: none;
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-sm);
     border-radius: var(--radius-md);
     transition: all var(--transition-fast);
     white-space: nowrap;
@@ -165,18 +169,8 @@
 }
 
 /* Responsive */
-@media (max-width: 1024px) {
-    .nav-desktop {
-        gap: var(--space-md);
-    }
-
-    .nav-link {
-        font-size: 0.875rem;
-        padding: var(--space-sm);
-    }
-}
-
-@media (max-width: 768px) {
+/* Below this width the full link list no longer fits next to the actions. */
+@media (max-width: 1439px) {
     .nav-desktop {
         display: none;
     }
@@ -188,7 +182,9 @@
     .nav-mobile {
         display: flex;
     }
+}
 
+@media (max-width: 768px) {
     .logo-text {
         display: none;
     }

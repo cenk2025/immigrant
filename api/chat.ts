@@ -4,7 +4,16 @@
 
 export const config = { runtime: 'nodejs' };
 
-export default async function handler(req: any, res: any) {
+// Minimal shapes of Vercel's Node request/response helpers (avoids a @vercel/node dependency).
+interface ChatRequest {
+    method?: string;
+    body?: { messages?: unknown; temperature?: number; max_tokens?: number } | null;
+}
+interface ChatResponse {
+    status(code: number): { json(body: unknown): void };
+}
+
+export default async function handler(req: ChatRequest, res: ChatResponse) {
     if (req.method !== 'POST') {
         res.status(405).json({ error: 'Method not allowed' });
         return;

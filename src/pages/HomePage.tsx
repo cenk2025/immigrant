@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, FileText, MessageCircle, LayoutDashboard, ArrowRight, CheckCircle, Users, HandshakeIcon } from 'lucide-react';
+import { BookOpen, FileText, MessageCircle, LayoutDashboard, ArrowRight, CheckCircle, Users, HandshakeIcon, Route } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
 import './HomePage.css';
 
@@ -15,6 +15,13 @@ export const HomePage: React.FC = () => {
     }, []);
 
     const features = [
+        {
+            icon: <Route size={32} />,
+            title: t('features.pathway.title'),
+            description: t('features.pathway.description'),
+            link: '/pathway',
+            color: 'secondary',
+        },
         {
             icon: <BookOpen size={32} />,
             title: t('features.guide.title'),
