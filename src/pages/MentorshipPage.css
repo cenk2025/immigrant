@@ -938,16 +938,27 @@
     font-size: 0.9rem;
 }
 
+.mp-past,
+.mp-mentees {
+    margin-bottom: 2.5rem;
+}
+
 .mp-past {
     margin-top: 3rem;
 }
 
-.mp-past > h3 {
-    margin-bottom: 1rem;
+.mp-subheading {
+    margin: 0 0 1rem;
     color: var(--color-text-secondary);
     font-size: 1rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+}
+
+.mp-agreement-back {
+    width: calc(100% - 3rem);
+    margin: 0 1.5rem 1.5rem;
+    justify-content: center;
 }
 
 .mp-chat-input-area {
