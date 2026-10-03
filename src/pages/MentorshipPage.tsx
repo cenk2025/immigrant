@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import {
     Users, Star, Shield, MessageCircle, ChevronRight,
-    X, Send, Check, AlertTriangle, ArrowLeft, Loader, HandshakeIcon
+    X, Send, Check, AlertTriangle, ArrowLeft, Loader, HandshakeIcon, LogOut
 } from 'lucide-react';
 import './MentorshipPage.css';
 
@@ -26,6 +26,13 @@ const AREAS = [
     'Networking', 'Finnish Culture', 'Work Permits & Visas', 'University Life',
     'Spouses & Family',
 ];
+
+const PROFILE_COLUMNS = 'id, user_id, display_name, role, background, areas, is_available, agreed_to_terms, created_at';
+
+interface PastMatch {
+    match: MentorshipMatch;
+    partner: MentorshipProfile | null;
+}
 
 // ─── Finnish Mentorship Agreement ─────────────────────────────────────────────
 const AGREEMENT_TEXT = `FINNISH MENTORSHIP AGREEMENT — CODE OF CONDUCT
@@ -78,6 +85,7 @@ export const MentorshipPage: React.FC = () => {
     const [agreementScrolled, setAgreementScrolled] = useState(false);
     const [incomingRequests, setIncomingRequests] = useState<MentorshipMatch[]>([]);
     const [incomingProfiles, setIncomingProfiles] = useState<Record<string, MentorshipProfile>>({});
+    const [pastMatches, setPastMatches] = useState<PastMatch[]>([]);
     const [error, setError] = useState<string | null>(null);
 
     // Registration form state
@@ -148,6 +156,7 @@ export const MentorshipPage: React.FC = () => {
             }
         } else {
             // No match — go to directory or landing based on role
+            await loadPastMatches();
             if (profile.role === 'mentee') {
                 await loadMentors();
                 setStep('directory');
@@ -170,6 +179,28 @@ export const MentorshipPage: React.FC = () => {
             setError('Could not load mentors: ' + err.message);
         }
         if (data) setMentors(data as MentorshipProfile[]);
+    };
+
+    const loadPastMatches = async () => {
+        if (!user) return;
+        const { data } = await supabase
+            .from('mentorship_matches')
+            .select('*')
+            .or(`mentee_id.eq.${user.id},mentor_id.eq.${user.id}`)
+            .eq('status', 'ended')
+            .order('ended_at', { ascending: false });
+        const matches = (data as MentorshipMatch[] | null) ?? [];
+        if (matches.length === 0) {
+            setPastMatches([]);
+            return;
+        }
+        const partnerOf = (m: MentorshipMatch) => (m.mentee_id === user.id ? m.mentor_id : m.mentee_id);
+        const { data: profiles } = await supabase
+            .from('mentorship_profiles')
+            .select(PROFILE_COLUMNS)
+            .in('user_id', matches.map(partnerOf));
+        const byUser = new Map(((profiles as MentorshipProfile[] | null) ?? []).map(p => [p.user_id, p]));
+        setPastMatches(matches.map(m => ({ match: m, partner: byUser.get(partnerOf(m)) ?? null })));
     };
 
     const loadIncomingRequests = async (profile: MentorshipProfile) => {
@@ -291,8 +322,16 @@ export const MentorshipPage: React.FC = () => {
 
     // ── Poll for messages in chat (backup if realtime not configured) ─────────
     useEffect(() => {
-        if (step !== 'chat' || !activeMatch) return;
-        const interval = setInterval(() => { loadMessages(); }, 3000);
+        if (step !== 'chat' || !activeMatch || activeMatch.status === 'ended') return;
+        const interval = setInterval(async () => {
+            loadMessages();
+            const { data } = await supabase
+                .from('mentorship_matches')
+                .select('*')
+                .eq('id', activeMatch.id)
+                .maybeSingle();
+            if (data && (data as MentorshipMatch).status === 'ended') setActiveMatch(data as MentorshipMatch);
+        }, 3000);
         return () => clearInterval(interval);
         // loadMessages is intentionally omitted to keep the poll interval stable.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -468,6 +507,49 @@ export const MentorshipPage: React.FC = () => {
         setSendingMessage(false);
     };
 
+    const returnToList = async () => {
+        if (!myProfile) return;
+        setActiveMatch(null);
+        setMatchPartnerProfile(null);
+        setMessages([]);
+        setNewMessage('');
+        setChatError(null);
+        stickToBottom.current = true;
+        if (myProfile.role === 'mentee') {
+            await loadMentors();
+            setStep('directory');
+        } else {
+            await loadIncomingRequests(myProfile);
+            setStep('incoming-requests');
+        }
+        await loadPastMatches();
+    };
+
+    const handleEndMatch = async () => {
+        if (!user || !activeMatch) return;
+        const ok = window.confirm(
+            'End this mentorship?\n\nThe chat will close for both of you. You can still read the conversation under "Past mentorships", and both of you can start a new match.'
+        );
+        if (!ok) return;
+        const { error: err } = await supabase
+            .from('mentorship_matches')
+            .update({ status: 'ended', ended_at: new Date().toISOString(), ended_by: user.id })
+            .eq('id', activeMatch.id);
+        if (err) {
+            setChatError('Could not end the mentorship: ' + err.message);
+            return;
+        }
+        await returnToList();
+    };
+
+    const openPastMatch = (past: PastMatch) => {
+        stickToBottom.current = true;
+        setMessages([]);
+        setActiveMatch(past.match);
+        setMatchPartnerProfile(past.partner);
+        setStep('chat');
+    };
+
     const toggleArea = (area: string) => {
         setForm(f => ({
             ...f,
@@ -610,8 +692,39 @@ export const MentorshipPage: React.FC = () => {
                     ))}
                 </div>
             )}
+            {renderPastMatches()}
         </div>
     );
+
+    const renderPastMatches = () => {
+        if (pastMatches.length === 0) return null;
+        return (
+            <div className="mp-past">
+                <h3>Past mentorships</h3>
+                <div className="mp-request-list">
+                    {pastMatches.map(past => {
+                        const name = past.partner?.display_name ?? 'Former partner';
+                        return (
+                            <div key={past.match.id} className="mp-request-card">
+                                <div className="mp-mentor-avatar small">{name.charAt(0).toUpperCase()}</div>
+                                <div className="mp-request-info">
+                                    <h3>{name}</h3>
+                                    {past.match.ended_at && (
+                                        <p>Ended {new Date(past.match.ended_at).toLocaleDateString()}</p>
+                                    )}
+                                </div>
+                                <div className="mp-request-actions">
+                                    <button className="btn btn-secondary btn-sm" onClick={() => openPastMatch(past)}>
+                                        <MessageCircle size={16} /> View conversation
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
 
     const renderPendingRequest = () => (
         <div className="mp-status-card animate-fade-in">
@@ -692,6 +805,7 @@ export const MentorshipPage: React.FC = () => {
                     })}
                 </div>
             )}
+            {renderPastMatches()}
         </div>
     );
 
@@ -763,6 +877,9 @@ export const MentorshipPage: React.FC = () => {
 
     const renderChat = () => {
         const partnerName = matchPartnerProfile?.display_name ?? 'Partner';
+        const isEnded = activeMatch?.status === 'ended';
+        const endedByMe = isEnded && activeMatch?.ended_by === user?.id;
+        const endedOn = activeMatch?.ended_at ? new Date(activeMatch.ended_at).toLocaleDateString() : null;
         return (
             <div className="mp-chat-container animate-fade-in">
                 <div className="mp-chat-header">
@@ -771,9 +888,24 @@ export const MentorshipPage: React.FC = () => {
                         <h3>{partnerName}</h3>
                         <span className="mp-chat-role">{matchPartnerProfile?.role === 'mentor' ? '⭐ Mentor' : '🎓 Mentee'}</span>
                     </div>
-                    <div className="mp-chat-shield">
-                        <Shield size={16} />
-                        <span>Anonymous & Encrypted</span>
+                    <div className="mp-chat-header-actions">
+                        {isEnded ? (
+                            <span className="mp-chat-ended-badge">Ended</span>
+                        ) : (
+                            <div className="mp-chat-shield">
+                                <Shield size={16} />
+                                <span>Anonymous & Encrypted</span>
+                            </div>
+                        )}
+                        {isEnded ? (
+                            <button type="button" className="mp-chat-header-btn" onClick={returnToList}>
+                                <ArrowLeft size={14} /> Back
+                            </button>
+                        ) : (
+                            <button type="button" className="mp-chat-header-btn" onClick={handleEndMatch}>
+                                <LogOut size={14} /> End mentorship
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -788,7 +920,11 @@ export const MentorshipPage: React.FC = () => {
                     {messages.length === 0 && (
                         <div className="mp-chat-empty">
                             <MessageCircle size={48} />
-                            <p>Your private mentorship chat is ready.<br />Say hello! 👋</p>
+                            <p>
+                                {isEnded
+                                    ? 'No messages were exchanged in this mentorship.'
+                                    : <>Your private mentorship chat is ready.<br />Say hello! 👋</>}
+                            </p>
                         </div>
                     )}
                     {messages.map(msg => {
@@ -811,6 +947,17 @@ export const MentorshipPage: React.FC = () => {
                     })}
                 </div>
 
+                {isEnded ? (
+                    <div className="mp-chat-input-area mp-chat-ended">
+                        <p>
+                            {endedByMe ? 'You ended this mentorship' : `${partnerName} ended this mentorship`}
+                            {endedOn ? ` on ${endedOn}` : ''}. The conversation is kept read-only.
+                        </p>
+                        <button type="button" className="btn btn-primary btn-sm" onClick={returnToList}>
+                            {myProfile?.role === 'mentee' ? 'Find a new mentor' : 'See mentee requests'}
+                        </button>
+                    </div>
+                ) : (
                 <form className="mp-chat-input-area" onSubmit={handleSendMessage}>
                     {chatError && (
                         <div className="mp-chat-error">
@@ -835,6 +982,7 @@ export const MentorshipPage: React.FC = () => {
                         </button>
                     </div>
                 </form>
+                )}
             </div>
         );
     };

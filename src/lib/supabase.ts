@@ -152,10 +152,12 @@ export interface MentorshipMatch {
     id: string;
     mentee_id: string;
     mentor_id: string;
-    status: 'pending' | 'active' | 'rejected';
+    status: 'pending' | 'active' | 'rejected' | 'ended';
     mentee_agreed: boolean;
     mentor_agreed: boolean;
     created_at: string;
+    ended_at?: string | null;
+    ended_by?: string | null;
 }
 
 export interface MentorshipMessage {
