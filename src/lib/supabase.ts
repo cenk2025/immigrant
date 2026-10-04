@@ -7,6 +7,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing Supabase environment variables');
 }
 
+// Read before createClient: the auth client consumes and clears the URL hash on startup,
+// and its PASSWORD_RECOVERY event can fire before React has subscribed.
+const initialHash = new URLSearchParams(typeof window !== 'undefined' ? window.location.hash.slice(1) : '');
+export const authRedirect = {
+    isRecovery: initialHash.get('type') === 'recovery',
+    hasError: initialHash.has('error_description') || initialHash.has('error_code'),
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Database types

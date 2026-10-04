@@ -364,6 +364,32 @@ export const translations = {
       },
     },
 
+    // Authentication
+    auth: {
+      forgotPassword: 'Forgot your password?',
+      reset: {
+        requestTitle: 'Reset your password',
+        requestSubtitle: 'Enter your email and we will send you a link to set a new password.',
+        email: 'Email',
+        sendLink: 'Send reset link',
+        sending: 'Sending…',
+        linkSent: 'If an account exists for this email, a reset link is on its way. Check your inbox and spam folder.',
+        newTitle: 'Set a new password',
+        newSubtitle: 'Choose a new password for {email}.',
+        newPassword: 'New password',
+        confirmPassword: 'Confirm new password',
+        hint: 'At least 8 characters.',
+        tooShort: 'Use at least 8 characters.',
+        mismatch: 'The passwords do not match.',
+        save: 'Save new password',
+        saving: 'Saving…',
+        success: 'Your password has been changed',
+        toDashboard: 'Go to dashboard',
+        backToLogin: 'Back to log in',
+        linkInvalid: 'This email link is invalid or has expired.',
+      },
+    },
+
     // Dashboard
     dashboard: {
       title: 'Dashboard',
@@ -793,6 +819,32 @@ export const translations = {
         addContent: 'Julkaise',
         noContentYet: 'Ei vielä julkaistua sisältöä.',
         deleteContent: 'Poista',
+      },
+    },
+
+    // Authentication
+    auth: {
+      forgotPassword: 'Unohditko salasanasi?',
+      reset: {
+        requestTitle: 'Palauta salasana',
+        requestSubtitle: 'Anna sähköpostiosoitteesi, niin lähetämme linkin uuden salasanan asettamiseen.',
+        email: 'Sähköposti',
+        sendLink: 'Lähetä palautuslinkki',
+        sending: 'Lähetetään…',
+        linkSent: 'Jos osoitteella on tili, palautuslinkki on matkalla. Tarkista myös roskapostikansio.',
+        newTitle: 'Aseta uusi salasana',
+        newSubtitle: 'Valitse uusi salasana tilille {email}.',
+        newPassword: 'Uusi salasana',
+        confirmPassword: 'Vahvista uusi salasana',
+        hint: 'Vähintään 8 merkkiä.',
+        tooShort: 'Käytä vähintään 8 merkkiä.',
+        mismatch: 'Salasanat eivät täsmää.',
+        save: 'Tallenna uusi salasana',
+        saving: 'Tallennetaan…',
+        success: 'Salasanasi on vaihdettu',
+        toDashboard: 'Siirry hallintapaneeliin',
+        backToLogin: 'Takaisin kirjautumiseen',
+        linkInvalid: 'Sähköpostilinkki on virheellinen tai vanhentunut.',
       },
     },
 

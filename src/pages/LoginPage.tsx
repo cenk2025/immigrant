@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { LogIn, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -9,6 +9,8 @@ export const LoginPage: React.FC = () => {
     const { t } = useLanguage();
     const { signIn } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const linkInvalid = searchParams.get('link') === 'invalid';
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -40,6 +42,15 @@ export const LoginPage: React.FC = () => {
                         <h1>{t('nav.login')}</h1>
                         <p>Welcome back to WorkLife IQ Finland</p>
                     </div>
+
+                    {linkInvalid && !error && (
+                        <div className="auth-error">
+                            <p>
+                                {t('auth.reset.linkInvalid')}{' '}
+                                <Link to="/reset-password" className="auth-link">{t('auth.forgotPassword')}</Link>
+                            </p>
+                        </div>
+                    )}
 
                     {error && (
                         <div className="auth-error">
@@ -80,6 +91,9 @@ export const LoginPage: React.FC = () => {
                                 required
                                 autoComplete="current-password"
                             />
+                            <Link to="/reset-password" className="auth-link auth-forgot">
+                                {t('auth.forgotPassword')}
+                            </Link>
                         </div>
 
                         <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>

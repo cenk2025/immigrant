@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { CookieConsent } from './components/CookieConsent';
+import { AuthRedirectHandler } from './components/AuthRedirectHandler';
 import { HomePage } from './pages/HomePage';
 import { GuidePage } from './pages/GuidePage';
 import { EmployerGuidePage } from './pages/EmployerGuidePage';
@@ -22,6 +23,7 @@ import { FamilyPage } from './pages/pathway/FamilyPage';
 import { InstitutionsPage } from './pages/pathway/InstitutionsPage';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import './App.css';
 
 function App() {
@@ -30,6 +32,7 @@ function App() {
       <LanguageProvider>
         <AuthProvider>
           <Router>
+            <AuthRedirectHandler />
             <div className="app">
               <Header />
               <main className="main-content">
@@ -50,6 +53,7 @@ function App() {
                   <Route path="/pathway/institutions" element={<InstitutionsPage />} />
                   <Route path="/login" element={<LoginPage />} />
                   <Route path="/signup" element={<SignupPage />} />
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
                   <Route path="/privacy" element={<ComingSoon page="Privacy Policy" />} />
                   <Route path="/terms" element={<ComingSoon page="Terms of Service" />} />
                   <Route path="/contact" element={<ComingSoon page="Contact" />} />
