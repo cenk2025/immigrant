@@ -1090,3 +1090,56 @@ body.dark-mode .mp-agreement-body {
     .mp-agree-btn { width: calc(100% - 2rem); margin: 0 1rem 1rem; }
     .mp-agreement-modal { border-radius: 16px; }
 }
+
+/* ── Role bar (mentor / mentee dashboards) ─────────────────────────────── */
+.mp-role-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 2rem;
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    background: var(--color-bg-elevated);
+}
+
+.mp-role-name {
+    color: var(--color-text-secondary);
+    font-size: 0.95rem;
+}
+
+.mp-role-name strong {
+    color: var(--color-text-primary);
+}
+
+.mp-role-switch {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 99px;
+    background: var(--color-bg-tertiary);
+}
+
+.mp-role-switch button {
+    border: none;
+    background: none;
+    padding: 0.4rem 0.9rem;
+    border-radius: 99px;
+    font: inherit;
+    font-size: 0.88rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.mp-role-switch button.active {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+    cursor: default;
+}
+
+.mp-status-card .btn {
+    margin-top: 1.25rem;
+}

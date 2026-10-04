@@ -29,6 +29,16 @@ const AREAS = [
 
 const PROFILE_COLUMNS = 'id, user_id, display_name, role, background, areas, is_available, agreed_to_terms, created_at';
 
+type Role = 'mentor' | 'mentee';
+
+const ROLE_KEY = 'mentorship-active-role';
+const readStoredRole = (): string | null => {
+    try { return localStorage.getItem(ROLE_KEY); } catch { return null; }
+};
+const storeRole = (role: Role) => {
+    try { localStorage.setItem(ROLE_KEY, role); } catch { /* storage unavailable: role just won't be remembered */ }
+};
+
 interface MatchWithPartner {
     match: MentorshipMatch;
     partner: MentorshipProfile | null;
@@ -76,6 +86,9 @@ export const MentorshipPage: React.FC = () => {
     const [step, setStep] = useState<Step>('landing');
     const [loading, setLoading] = useState(false);
     const [myProfile, setMyProfile] = useState<MentorshipProfile | null>(null);
+    // The user's profile for the other role, if they take part as both mentor and mentee.
+    const [otherProfile, setOtherProfile] = useState<MentorshipProfile | null>(null);
+    const [menteeCurrent, setMenteeCurrent] = useState<MatchWithPartner | null>(null);
     const [mentors, setMentors] = useState<MentorshipProfile[]>([]);
     const [activeMatch, setActiveMatch] = useState<MentorshipMatch | null>(null);
     const [matchPartnerProfile, setMatchPartnerProfile] = useState<MentorshipProfile | null>(null);
@@ -102,48 +115,59 @@ export const MentorshipPage: React.FC = () => {
             .from('mentorship_profiles')
             .select('*')
             .eq('user_id', user!.id)
-            .maybeSingle();
-
-        if (data) {
-            setMyProfile(data as MentorshipProfile);
-            // Check for active match
-            await checkForMatch(data as MentorshipProfile);
+            .order('created_at', { ascending: true });
+        const profiles = (data as MentorshipProfile[] | null) ?? [];
+        if (profiles.length > 0) {
+            const active = profiles.find(p => p.role === readStoredRole()) ?? profiles[0];
+            setMyProfile(active);
+            setOtherProfile(profiles.find(p => p.role !== active.role) ?? null);
+            await checkForMatch(active);
         }
         setLoading(false);
     };
 
+    // Both roles land on a dashboard; conversations are opened from there.
     const checkForMatch = async (profile: MentorshipProfile) => {
-        // Mentors can guide several mentees, so they always land on their dashboard.
         if (profile.role === 'mentor') {
             await loadMentorDashboard(profile);
             setStep('incoming-requests');
-            return;
+        } else {
+            await loadMenteeHome();
+            setStep('directory');
         }
+    };
 
-        const { data: activeMatches } = await supabase
+    const loadMenteeCurrent = async () => {
+        if (!user) return;
+        const { data } = await supabase
             .from('mentorship_matches')
             .select('*')
-            .eq('mentee_id', user!.id)
+            .eq('mentee_id', user.id)
             .in('status', ['pending', 'active'])
             .order('created_at', { ascending: false })
             .limit(1);
-
-        if (activeMatches && activeMatches.length > 0) {
-            const match = activeMatches[0] as MentorshipMatch;
-            setActiveMatch(match);
-            const { data: partnerData } = await supabase
-                .from('mentorship_profiles')
-                .select(PROFILE_COLUMNS)
-                .eq('user_id', match.mentor_id)
-                .maybeSingle();
-            if (partnerData) setMatchPartnerProfile(partnerData as MentorshipProfile);
-            if (match.status === 'pending') setStep('pending-request');
-            else setStep(match.mentee_agreed && match.mentor_agreed ? 'chat' : 'agreement');
-        } else {
-            await loadPastMatches();
-            await loadMentors();
-            setStep('directory');
+        const match = ((data as MentorshipMatch[] | null) ?? [])[0];
+        if (!match) {
+            setMenteeCurrent(null);
+            return;
         }
+        const { data: partner } = await supabase
+            .from('mentorship_profiles')
+            .select(PROFILE_COLUMNS)
+            .eq('user_id', match.mentor_id)
+            .eq('role', 'mentor')
+            .maybeSingle();
+        // Keep the same object when nothing changed so the home poll doesn't restart itself.
+        setMenteeCurrent(prev =>
+            prev && prev.match.id === match.id && prev.match.status === match.status
+                && prev.match.mentee_agreed === match.mentee_agreed && prev.match.mentor_agreed === match.mentor_agreed
+                ? prev
+                : { match, partner: (partner as MentorshipProfile | null) ?? null }
+        );
+    };
+
+    const loadMenteeHome = async () => {
+        await Promise.all([loadMenteeCurrent(), loadMentors(), loadPastMatches('mentee')]);
     };
 
     const loadMentors = async () => {
@@ -160,12 +184,13 @@ export const MentorshipPage: React.FC = () => {
         if (data) setMentors(data as MentorshipProfile[]);
     };
 
-    const loadPastMatches = async () => {
+    const loadPastMatches = async (role: Role) => {
         if (!user) return;
+        const myColumn = role === 'mentee' ? 'mentee_id' : 'mentor_id';
         const { data } = await supabase
             .from('mentorship_matches')
             .select('*')
-            .or(`mentee_id.eq.${user.id},mentor_id.eq.${user.id}`)
+            .eq(myColumn, user.id)
             .eq('status', 'ended')
             .order('ended_at', { ascending: false });
         const matches = (data as MentorshipMatch[] | null) ?? [];
@@ -173,11 +198,12 @@ export const MentorshipPage: React.FC = () => {
             setPastMatches([]);
             return;
         }
-        const partnerOf = (m: MentorshipMatch) => (m.mentee_id === user.id ? m.mentor_id : m.mentee_id);
+        const partnerOf = (m: MentorshipMatch) => (role === 'mentee' ? m.mentor_id : m.mentee_id);
         const { data: profiles } = await supabase
             .from('mentorship_profiles')
             .select(PROFILE_COLUMNS)
-            .in('user_id', matches.map(partnerOf));
+            .in('user_id', matches.map(partnerOf))
+            .eq('role', role === 'mentee' ? 'mentor' : 'mentee');
         const byUser = new Map(((profiles as MentorshipProfile[] | null) ?? []).map(p => [p.user_id, p]));
         setPastMatches(matches.map(m => ({ match: m, partner: byUser.get(partnerOf(m)) ?? null })));
     };
@@ -198,13 +224,14 @@ export const MentorshipPage: React.FC = () => {
         const { data: profiles } = await supabase
             .from('mentorship_profiles')
             .select(PROFILE_COLUMNS)
-            .in('user_id', matches.map(m => m.mentee_id));
+            .in('user_id', matches.map(m => m.mentee_id))
+            .eq('role', 'mentee');
         const byUser = new Map(((profiles as MentorshipProfile[] | null) ?? []).map(p => [p.user_id, p]));
         setActiveMentees(matches.map(m => ({ match: m, partner: byUser.get(m.mentee_id) ?? null })));
     };
 
     const loadMentorDashboard = async (profile: MentorshipProfile) => {
-        await Promise.all([loadIncomingRequests(profile), loadActiveMentees(), loadPastMatches()]);
+        await Promise.all([loadIncomingRequests(profile), loadActiveMentees(), loadPastMatches('mentor')]);
     };
 
     const loadIncomingRequests = async (profile: MentorshipProfile) => {
@@ -221,8 +248,9 @@ export const MentorshipPage: React.FC = () => {
             const ids = reqs.map((r: MentorshipMatch) => r.mentee_id);
             const { data: profiles } = await supabase
                 .from('mentorship_profiles')
-                .select('id, user_id, display_name, role, background, areas, is_available, agreed_to_terms, created_at')
-                .in('user_id', ids);
+                .select(PROFILE_COLUMNS)
+                .in('user_id', ids)
+                .eq('role', 'mentee');
             if (profiles) {
                 const map: Record<string, MentorshipProfile> = {};
                 (profiles as MentorshipProfile[]).forEach(p => { map[p.user_id] = p; });
@@ -292,24 +320,24 @@ export const MentorshipPage: React.FC = () => {
                 if (updated.status === 'active') {
                     clearInterval(interval);
                     // Reload partner profile before going to agreement
-                    const partnerId = myProfile?.role === 'mentee' ? updated.mentor_id : updated.mentee_id;
                     const { data: partnerData } = await supabase
                         .from('mentorship_profiles')
-                        .select('id, user_id, display_name, role, background, areas, is_available, agreed_to_terms, created_at')
-                        .eq('user_id', partnerId)
+                        .select(PROFILE_COLUMNS)
+                        .eq('user_id', updated.mentor_id)
+                        .eq('role', 'mentor')
                         .maybeSingle();
                     if (partnerData) setMatchPartnerProfile(partnerData as MentorshipProfile);
                     setStep('agreement');
                 } else if (updated.status === 'rejected') {
                     clearInterval(interval);
                     setActiveMatch(null);
-                    await loadMentors();
+                    await loadMenteeHome();
                     setStep('directory');
                 }
             }
         }, 4000);
         return () => clearInterval(interval);
-        // loadMentors is intentionally omitted to keep the poll interval stable.
+        // loadMenteeHome is intentionally omitted to keep the poll interval stable.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step, activeMatch]);
 
@@ -323,6 +351,16 @@ export const MentorshipPage: React.FC = () => {
         // loadIncomingRequests is intentionally omitted to keep the poll interval stable.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [step, myProfile]);
+
+    // ── Poll for mentee: keep the "Your mentor" card current on the dashboard ─
+    const menteeWaiting = !!menteeCurrent && !(menteeCurrent.match.mentee_agreed && menteeCurrent.match.mentor_agreed);
+    useEffect(() => {
+        if (step !== 'directory' || myProfile?.role !== 'mentee' || !menteeWaiting) return;
+        const interval = setInterval(() => { loadMenteeCurrent(); }, 5000);
+        return () => clearInterval(interval);
+        // loadMenteeCurrent is intentionally omitted to keep the poll interval stable.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [step, myProfile, menteeWaiting]);
 
     // ── Poll for messages in chat (backup if realtime not configured) ─────────
     useEffect(() => {
@@ -398,13 +436,11 @@ export const MentorshipPage: React.FC = () => {
             setError(err.message);
         } else {
             const profile = data as MentorshipProfile;
+            if (myProfile && myProfile.role !== profile.role) setOtherProfile(myProfile);
             setMyProfile(profile);
-            if (role === 'mentee') {
-                await loadMentors();
-                setStep('directory');
-            } else {
-                setStep('incoming-requests');
-            }
+            storeRole(profile.role);
+            setForm({ display_name: '', background: '', areas: [] });
+            await checkForMatch(profile);
         }
         setLoading(false);
     };
@@ -430,6 +466,7 @@ export const MentorshipPage: React.FC = () => {
         } else {
             setActiveMatch(data as MentorshipMatch);
             setMatchPartnerProfile(mentor);
+            setMenteeCurrent({ match: data as MentorshipMatch, partner: mentor });
             setStep('pending-request');
         }
         setLoading(false);
@@ -511,21 +548,39 @@ export const MentorshipPage: React.FC = () => {
         setSendingMessage(false);
     };
 
-    const returnToList = async () => {
-        if (!myProfile) return;
+    const resetConversation = () => {
         setActiveMatch(null);
         setMatchPartnerProfile(null);
         setMessages([]);
         setNewMessage('');
         setChatError(null);
+        setError(null);
         stickToBottom.current = true;
-        if (myProfile.role === 'mentee') {
-            await Promise.all([loadMentors(), loadPastMatches()]);
-            setStep('directory');
-        } else {
-            await loadMentorDashboard(myProfile);
-            setStep('incoming-requests');
-        }
+    };
+
+    const returnToList = async () => {
+        if (!myProfile) return;
+        resetConversation();
+        await checkForMatch(myProfile);
+    };
+
+    const switchRole = async () => {
+        if (!myProfile || !otherProfile) return;
+        const next = otherProfile;
+        resetConversation();
+        setOtherProfile(myProfile);
+        setMyProfile(next);
+        storeRole(next.role);
+        setLoading(true);
+        await checkForMatch(next);
+        setLoading(false);
+    };
+
+    const addOtherRole = () => {
+        if (!myProfile) return;
+        setError(null);
+        setForm({ display_name: '', background: '', areas: [] });
+        setStep(myProfile.role === 'mentor' ? 'register-mentee' : 'register-mentor');
     };
 
     const handleEndMatch = async () => {
@@ -552,8 +607,9 @@ export const MentorshipPage: React.FC = () => {
         setAgreementScrolled(false);
         setActiveMatch(match);
         setMatchPartnerProfile(partner);
-        const needsAgreement = match.status === 'active' && !(match.mentee_agreed && match.mentor_agreed);
-        setStep(needsAgreement ? 'agreement' : 'chat');
+        if (match.status === 'pending') setStep('pending-request');
+        else if (match.status === 'active' && !(match.mentee_agreed && match.mentor_agreed)) setStep('agreement');
+        else setStep('chat');
     };
 
     const toggleArea = (area: string) => {
@@ -568,7 +624,7 @@ export const MentorshipPage: React.FC = () => {
     // ── Render helpers ────────────────────────────────────────────────────────
     const renderProfileForm = (role: 'mentor' | 'mentee') => (
         <div className="mp-form-container animate-fade-in">
-            <button className="mp-back-btn" onClick={() => setStep('landing')}>
+            <button className="mp-back-btn" onClick={() => (myProfile ? returnToList() : setStep('landing'))}>
                 <ArrowLeft size={18} /> Back
             </button>
             <div className="mp-form-card">
@@ -643,11 +699,80 @@ export const MentorshipPage: React.FC = () => {
         </div>
     );
 
+    const renderRoleBar = () => {
+        if (!myProfile) return null;
+        return (
+            <div className="mp-role-bar">
+                <span className="mp-role-name">
+                    {myProfile.role === 'mentor' ? '⭐' : '🎓'} <strong>{myProfile.display_name}</strong>
+                </span>
+                {otherProfile ? (
+                    <div className="mp-role-switch" role="group" aria-label="Choose your role">
+                        {(['mentee', 'mentor'] as Role[]).map(r => (
+                            <button
+                                key={r}
+                                type="button"
+                                className={myProfile.role === r ? 'active' : ''}
+                                aria-pressed={myProfile.role === r}
+                                onClick={myProfile.role === r ? undefined : switchRole}
+                                disabled={loading}
+                            >
+                                {r === 'mentee' ? '🎓 As mentee' : '⭐ As mentor'}
+                            </button>
+                        ))}
+                    </div>
+                ) : (
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={addOtherRole}>
+                        {myProfile.role === 'mentee' ? '⭐ Also become a mentor' : '🎓 Also find a mentor for yourself'}
+                    </button>
+                )}
+            </div>
+        );
+    };
+
+    const renderCurrentMentor = () => {
+        if (!menteeCurrent) return null;
+        const { match, partner } = menteeCurrent;
+        const name = partner?.display_name ?? 'Your mentor';
+        const chatOpen = match.status === 'active' && match.mentee_agreed && match.mentor_agreed;
+        const status = match.status === 'pending'
+            ? 'Request sent — waiting for the mentor to accept'
+            : chatOpen
+                ? 'Chat open'
+                : match.mentee_agreed
+                    ? 'Waiting for the mentor to accept the agreement'
+                    : 'Accept the agreement to start chatting';
+        const action = match.status === 'pending' ? 'View request' : chatOpen ? 'Open chat' : 'Review agreement';
+        return (
+            <div className="mp-mentees">
+                <h3 className="mp-subheading">Your mentor</h3>
+                <div className="mp-request-card">
+                    <div className="mp-mentor-avatar small">{name.charAt(0).toUpperCase()}</div>
+                    <div className="mp-request-info">
+                        <h3>{name}</h3>
+                        <p>{status}</p>
+                    </div>
+                    <div className="mp-request-actions">
+                        <button className="btn btn-primary btn-sm" onClick={() => openMatch(menteeCurrent)}>
+                            {chatOpen ? <MessageCircle size={16} /> : <Shield size={16} />} {action}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const renderDirectory = () => (
         <div className="mp-directory animate-fade-in">
+            {renderRoleBar()}
+            {renderCurrentMentor()}
             <div className="mp-section-header">
                 <h2>Available Mentors</h2>
-                <p>Click "Request Match" to connect. Your email and real name will never be shared.</p>
+                <p>
+                    {menteeCurrent
+                        ? 'You can work with one mentor at a time. End your current mentorship to request a new one.'
+                        : 'Click "Request Match" to connect. Your email and real name will never be shared.'}
+                </p>
                 <button
                     className="btn btn-secondary btn-sm mp-refresh-btn"
                     onClick={loadMentors}
@@ -689,7 +814,7 @@ export const MentorshipPage: React.FC = () => {
                             <button
                                 className="btn btn-primary mp-request-btn"
                                 onClick={() => handleRequestMatch(mentor)}
-                                disabled={loading}
+                                disabled={loading || !!menteeCurrent}
                             >
                                 {loading ? <Loader size={16} className="spin" /> : <HandshakeIcon size={16} />}
                                 Request Match
@@ -782,11 +907,15 @@ export const MentorshipPage: React.FC = () => {
                 <span>No personal information has been shared.</span>
             </div>
             <p className="mp-polling-hint">🔴 Checking for updates every 4 seconds...</p>
+            <button type="button" className="btn btn-secondary" onClick={returnToList}>
+                <ArrowLeft size={16} /> Back to dashboard
+            </button>
         </div>
     );
 
     const renderIncomingRequests = () => (
         <div className="mp-incoming animate-fade-in">
+            {renderRoleBar()}
             <div className="mp-section-header">
                 <h2>Your Mentor Dashboard</h2>
                 <p>Mentees who want to connect with you. Accept to open the agreement process.</p>
@@ -914,11 +1043,9 @@ export const MentorshipPage: React.FC = () => {
                         </div>
                     )}
 
-                    {myProfile?.role === 'mentor' && (
-                        <button type="button" className="btn btn-secondary mp-agreement-back" onClick={returnToList}>
-                            <ArrowLeft size={16} /> Back to dashboard
-                        </button>
-                    )}
+                    <button type="button" className="btn btn-secondary mp-agreement-back" onClick={returnToList}>
+                        <ArrowLeft size={16} /> Back to dashboard
+                    </button>
                 </div>
             </div>
         );
@@ -952,11 +1079,9 @@ export const MentorshipPage: React.FC = () => {
                             </button>
                         ) : (
                             <>
-                                {myProfile?.role === 'mentor' && (
-                                    <button type="button" className="mp-chat-header-btn" onClick={returnToList}>
-                                        <ArrowLeft size={14} /> Dashboard
-                                    </button>
-                                )}
+                                <button type="button" className="mp-chat-header-btn" onClick={returnToList}>
+                                    <ArrowLeft size={14} /> Dashboard
+                                </button>
                                 <button type="button" className="mp-chat-header-btn" onClick={handleEndMatch}>
                                     <LogOut size={14} /> End mentorship
                                 </button>
@@ -1010,7 +1135,7 @@ export const MentorshipPage: React.FC = () => {
                             {endedOn ? ` on ${endedOn}` : ''}. The conversation is kept read-only.
                         </p>
                         <button type="button" className="btn btn-primary btn-sm" onClick={returnToList}>
-                            {myProfile?.role === 'mentee' ? 'Find a new mentor' : 'See mentee requests'}
+                            Back to dashboard
                         </button>
                     </div>
                 ) : (
@@ -1087,7 +1212,7 @@ export const MentorshipPage: React.FC = () => {
                 {user && !loading && step === 'landing' && !myProfile && (
                     <div className="mp-landing animate-fade-in">
                         <h2>How would you like to participate?</h2>
-                        <p>Choose a role to get started. You can only have one active mentorship at a time.</p>
+                        <p>Choose a role to get started. You can take part as a mentor, a mentee, or both.</p>
                         <div className="mp-role-cards">
                             <div className="mp-role-card mentor" onClick={() => setStep('register-mentor')}>
                                 <div className="mp-role-icon">⭐</div>
